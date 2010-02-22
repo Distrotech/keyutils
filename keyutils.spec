@@ -5,7 +5,7 @@
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 2
+Release: 3
 License: GPL/LGPL
 Group: System Environment/Base
 ExclusiveOS: Linux
@@ -56,6 +56,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/*
 
 %changelog
+* Fri Nov 18 2005 David Howells <dhowells@redhat.com> - 0.3-3
+- Added stdint.h inclusion in keyutils.h
+- Made request-key.c use request_key() rather than keyctl_search()
+- Added piping facility to request-key
+
 * Thu Nov 17 2005 David Howells <dhowells@redhat.com> - 0.3-2
 - Added timeout keyctl option
 - request_key auth keys must now be assumed

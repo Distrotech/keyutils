@@ -1,5 +1,5 @@
-.\"
-.\" Copyright (C) 2004 Red Hat, Inc. All Rights Reserved.
+.\" -*- nroff -*-
+.\" Copyright (C) 2005 Red Hat, Inc. All Rights Reserved.
 .\" Written by David Howells (dhowells@redhat.com)
 .\"
 .\" This program is free software; you can redistribute it and/or
@@ -40,6 +40,14 @@ Should a match be made, the program specified by <prog> will be exec'd. This
 must have a fully qualified path name. argv[0] will be set from the part of the
 program name that follows the last slash '/' character.
 .P
+If the program name is prefixed with a pipe bar character '|', then the program
+will be forked and exec'd attached to three pipes. The callout information will
+be piped to it on it's stdin and the intended payload data will be retrieved
+from its stdout. Anything sent to stderr will be posted in syslog. If the
+program exits 0, then /sbin/request-key will attempt to instantiate the key
+with the data read from stdout. If it fails in any other way, then request-key
+will attempt to execute the appropriate 'negate' operation command.
+.P
 The program arguments can be substituted with various macros. Only complete
 argument substitution is supported - macro substitutions can't be embedded. All
 macros begin with a percent character '%'. An argument beginning with two
@@ -77,18 +85,22 @@ contents of a key:
 .RE
 .P
 This performs a lookup for a key of the given type and description on the
-requestor's session keyring, and if found, substitutes the contents for the
-macro. If not found an error will be logged and the key under construction will
-be negated.
+requestor's keyrings, and if found, substitutes the contents for the macro. If
+not found an error will be logged and the key under construction will be
+negated.
 .SH EXAMPLE
 .P
 A basic file will be installed in the /etc. This will contain two debugging
 lines that can be used to test the installation:
 .P
 .RS
-create user debug:* negate /bin/keyctl %k negate 30 %S
+create user debug:* negate /bin/keyctl negate %k 30 %S
+.br
+create user debug:loop:* * |/bin/cat
 .br
 create user debug:* * /usr/share/keyutils/request-key-debug.sh %k %d %c %S
+.br
+negate * * * /bin/keyctl negate %k 30 %S
 .RE
 .P
 This is set up so that something like:
@@ -97,13 +109,21 @@ This is set up so that something like:
 keyctl request2 user debug:xxxx negate
 .RE
 .P
-will create a negative user-defined key, and something like:
+will create a negative user-defined key, something like:
 .P
 .RS
 keyctl request2 user debug:yyyy spoon
 .RE
 .P
-will create an instantiated user-defined key with "Debug spoon" as the payload.
+will create an instantiated user-defined key with "Debug spoon" as the payload,
+and something like:
+.P
+.RS
+keyctl request2 user debug:loop:zzzz abcdefghijkl
+.RE
+.P
+will create an instantiated user-defined key with the callout information as
+the payload.
 .SH FILES
 .ul
 /etc/request-key.conf

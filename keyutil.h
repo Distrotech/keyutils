@@ -12,6 +12,7 @@
 #ifndef KEYUTIL_H
 #define KEYUTIL_H
 
+#include <stdint.h>
 
 /* key serial number */
 typedef int32_t key_serial_t;

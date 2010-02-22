@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <signal.h>
 #include <syslog.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -114,6 +115,11 @@ static void error(const char *fmt, ...)
 	exit(1);
 }
 
+static void oops(int x)
+{
+	error("Died on signal %d", x);
+}
+
 /*****************************************************************************/
 /*
  *
@@ -122,7 +128,11 @@ int main(int argc, char *argv[])
 {
 	key_serial_t key;
 	char *ktype, *kdesc, *buf, *callout_info;
-	int ret, ntype, dpos, dlen;
+	int ret, ntype, dpos, dlen, fd;
+
+	signal(SIGSEGV, oops);
+	signal(SIGBUS, oops);
+	signal(SIGPIPE, SIG_IGN);
 
 	for (;;) {
 		if (argc > 1 && strcmp(argv[1], "-d") == 0) {
@@ -142,6 +152,21 @@ int main(int argc, char *argv[])
 	if (argc != 8 && argc != 9)
 		error("Unexpected argument count: %d\n", argc);
 
+	fd = open("/dev/null", O_RDWR);
+	if (fd < 0)
+		error("open");
+	if (fd > 2) {
+		close(fd);
+	}
+	else if (fd < 2) {
+		ret = dup(fd);
+		if (ret < 0)
+			error("dup failed: %m\n");
+
+		if (ret < 2 && dup(fd) < 0)
+			error("dup failed: %m\n");
+	}
+
 	xkey = argv[2];
 	xuid = argv[3];
 	xgid = argv[4];
@@ -157,7 +182,7 @@ int main(int argc, char *argv[])
 		error("Failed to assume authority over key %d (%m)\n", key);
 
 	/* ask the kernel to describe the key to us */
-	if (xdebug <= 0) {
+	if (xdebug < 2) {
 		ret = keyctl_describe_alloc(key, &buf);
 		if (ret < 0)
 			goto inaccessible;
@@ -194,6 +219,8 @@ int main(int argc, char *argv[])
 
 		callout_info = tmp;
 	}
+
+	debug("CALLOUT: '%s'\n", callout_info);
 
 	/* determine the action to perform */
 	lookup_action(argv[1],		/* op */
@@ -318,6 +345,8 @@ static void lookup_action(char *op,
 		if (!*p)
 			goto syntax_error;
 
+		fclose(conf);
+
 		execute_program(op, key, ktype, kdesc, callout_info, p);
 	}
 
@@ -405,7 +434,7 @@ static void execute_program(char *op,
 	char *prog, *p, *q;
 	int argc, pipeit;
 
-	debug("execute_program('%s')\n", cmdline);
+	debug("execute_program('%s','%s')\n", callout_info, cmdline);
 
 	/* if the commandline begins with a bar, then we pipe the callout data into it and read
 	 * back the payload data
@@ -420,9 +449,11 @@ static void execute_program(char *op,
 	/* extract the path to the program to run */
 	prog = p = cmdline;
 	while (*p && !isspace(*p)) p++;
-	if (!*p)
-		error("/etc/request-key.conf:%d: No command path\n", confline);
-	*p++ = 0;
+//	if (!*p)
+//		error("/etc/request-key.conf:%d: No command path\n", confline);
+//	*p++ = 0;
+	if (*p)
+		*p++ = 0;
 
 	argv[0] = strrchr(prog, '/') + 1;
 
@@ -479,7 +510,7 @@ static void execute_program(char *op,
 
 		/* keysub macro */
 		if (*q == '{') {
-			key_serial_t rqsession, keysub;
+			key_serial_t keysub;
 			void *tmp;
 			char *ksdesc, *end, *subdata;
 			int ret, loop;
@@ -511,10 +542,10 @@ static void execute_program(char *op,
 				error("/etc/request-key.conf:%d: Keysub description empty\n",
 				      confline);
 
-			/* look up the key in the requestor's session keyring */
-			rqsession = atoi(xsession_keyring);
-
-			keysub = keyctl_search(rqsession, q, ksdesc, 0);
+			/* look up the key in the requestor's keyrings, but fail immediately if the
+			 * key is not found rather than invoking /sbin/request-key again
+			 */
+			keysub = request_key(q, ksdesc, NULL, 0);
 			if (keysub < 0)
 				error("/etc/request-key.conf:%d:"
 				      " Keysub key not found: %m\n",
@@ -546,7 +577,7 @@ static void execute_program(char *op,
 	if (xdebug) {
 		char **ap;
 
-		debug("%s %s\n", pipeit ? "Run" : "PipeThru", prog);
+		debug("%s %s\n", pipeit ? "PipeThru" : "Run", prog);
 		for (ap = argv; *ap; ap++)
 			debug("- argv[%zd] = \"%s\"\n", ap - argv, *ap);
 	}
@@ -581,10 +612,13 @@ static void pipe_to_program(char *op,
 			    char *prog,
 			    char **argv)
 {
-	char payload[32768 + 1], *pp, *pc;
-	int ipi[2], opi[2], childpid, ifl, ofl, npay, ninfo, tmp;
+	char errbuf[512], payload[32768 + 1], *pp, *pc, *pe;
+	int ipi[2], opi[2], epi[2], childpid;
+	int ifl, ofl, efl, npay, ninfo, espace, tmp;
 
-	if (pipe(ipi) < 0 || pipe(opi) < 0)
+	debug("pipe_to_program(%s -> %s)", callout_info, prog);
+
+	if (pipe(ipi) < 0 || pipe(opi) < 0 || pipe(epi) < 0)
 		error("pipe failed: %m");
 
 	childpid = fork();
@@ -594,12 +628,15 @@ static void pipe_to_program(char *op,
 	if (childpid == 0) {
 		/* child process */
 		if (dup2(ipi[0], 0) < 0 ||
-		    dup2(opi[1], 1) < 0)
+		    dup2(opi[1], 1) < 0 ||
+		    dup2(epi[1], 2) < 0)
 			error("dup2 failed: %m");
 		close(ipi[0]);
 		close(ipi[1]);
 		close(opi[0]);
 		close(opi[1]);
+		close(epi[0]);
+		close(epi[1]);
 
 		execv(prog, argv);
 		error("/etc/request-key.conf:%d: Failed to execute '%s': %m\n", confline, prog);
@@ -608,27 +645,35 @@ static void pipe_to_program(char *op,
 	/* parent process */
 	close(ipi[0]);
 	close(opi[1]);
+	close(epi[1]);
 
 #define TOSTDIN ipi[1]
 #define FROMSTDOUT opi[0]
+#define FROMSTDERR epi[0]
 
 	ifl = fcntl(TOSTDIN, F_GETFL);
 	ofl = fcntl(FROMSTDOUT, F_GETFL);
-	if (ifl < 0 || ofl < 0)
+	efl = fcntl(FROMSTDERR, F_GETFL);
+	if (ifl < 0 || ofl < 0 || efl < 0)
 		error("fcntl/F_GETFL failed: %m");
 
 	ifl |= O_NONBLOCK;
 	ofl |= O_NONBLOCK;
+	efl |= O_NONBLOCK;
 
 	if (fcntl(TOSTDIN, F_SETFL, ifl) < 0 ||
-	    fcntl(FROMSTDOUT, F_SETFL, ofl) < 0)
+	    fcntl(FROMSTDOUT, F_SETFL, ofl) < 0 ||
+	    fcntl(FROMSTDERR, F_SETFL, efl) < 0)
 		error("fcntl/F_SETFL failed: %m");
+
+	ninfo = strlen(callout_info);
+	pc = callout_info;
 
 	npay = sizeof(payload);
 	pp = payload;
 
-	ninfo = strlen(callout_info);
-	pc = callout_info;
+	espace = sizeof(errbuf);
+	pe = errbuf;
 
 	do {
 		fd_set rfds, wfds;
@@ -637,57 +682,134 @@ static void pipe_to_program(char *op,
 		FD_ZERO(&wfds);
 
 		if (TOSTDIN != -1) {
-			if (npay > 0) {
+			if (ninfo > 0) {
 				FD_SET(TOSTDIN, &wfds);
 			}
 			else {
 				close(TOSTDIN);
 				TOSTDIN = -1;
-
-				if (FROMSTDOUT == -1)
-					break;
+				continue;
 			}
 		}
 
-		if (FROMSTDOUT)
+		if (FROMSTDOUT != -1)
 			FD_SET(FROMSTDOUT, &rfds);
 
+		if (FROMSTDERR != -1)
+			FD_SET(FROMSTDERR, &rfds);
+
 		tmp = TOSTDIN > FROMSTDOUT ? TOSTDIN : FROMSTDOUT;
+		tmp = tmp > FROMSTDERR ? tmp : FROMSTDERR;
 		tmp++;
+
+		debug("select r=%d,%d w=%d m=%d\n", FROMSTDOUT, FROMSTDERR, TOSTDIN, tmp);
 
 		tmp = select(tmp, &rfds, &wfds, NULL, NULL);
 		if (tmp < 0)
-			error("select failed: %m");
+			error("select failed: %m\n");
 
-		if (FD_ISSET(TOSTDIN, &wfds)) {
+		debug("select -> %d r=%x w=%x\n", tmp, *(unsigned *) &rfds, *(unsigned *) &wfds);
+
+		if (TOSTDIN != -1 && FD_ISSET(TOSTDIN, &wfds)) {
 			tmp = write(TOSTDIN, pc, ninfo);
-			if (tmp < 0)
-				error("write failed: %m");
-			pc += tmp;
-			ninfo -= tmp;
+			if (tmp < 0) {
+				if (errno != EPIPE)
+					error("write failed: %m\n");
+
+				debug("EPIPE");
+				ninfo = 0;
+			}
+			else {
+				debug("wrote %d\n", tmp);
+
+				pc += tmp;
+				ninfo -= tmp;
+			}
 		}
 
-		if (FD_ISSET(FROMSTDOUT, &rfds)) {
+		if (FROMSTDOUT != -1 && FD_ISSET(FROMSTDOUT, &rfds)) {
 			tmp = read(FROMSTDOUT, pp, npay);
 			if (tmp < 0)
-				error("read failed: %m");
+				error("read failed: %m\n");
+
+			debug("read %d\n", tmp);
 
 			if (tmp == 0) {
 				close(FROMSTDOUT);
-				close(TOSTDIN);
 				FROMSTDOUT = -1;
-				TOSTDIN = -1;
 			}
 			else {
 				pp += tmp;
 				npay -= tmp;
 
 				if (npay == 0)
-					error("Too much data read from query program");
+					error("Too much data read from query program\n");
 			}
 		}
 
-	} while (TOSTDIN != -1 && FROMSTDOUT != -1);
+		if (FROMSTDERR != -1 && FD_ISSET(FROMSTDERR, &rfds)) {
+			char *nl;
+
+			tmp = read(FROMSTDERR, pe, espace);
+			if (tmp < 0)
+				error("read failed: %m\n");
+
+			debug("read err %d\n", tmp);
+
+			if (tmp == 0) {
+				close(FROMSTDERR);
+				FROMSTDERR = -1;
+				continue;
+			}
+
+			pe += tmp;
+			espace -= tmp;
+
+			while ((nl = memchr(errbuf, '\n', pe - errbuf))) {
+				int n, rest;
+
+				nl++;
+				n = nl - errbuf;
+
+				if (xdebug)
+					fprintf(stderr, "Child: %*.*s", n, n, errbuf);
+
+				if (!xnolog) {
+					openlog("request-key", 0, LOG_AUTHPRIV);
+					syslog(LOG_ERR, "Child: %*.*s", n, n, errbuf);
+					closelog();
+				}
+
+				rest = pe - nl;
+				if (rest > 0) {
+					memmove(errbuf, nl, rest);
+					pe -= n;
+					espace += n;
+				}
+				else {
+					pe = errbuf;
+					espace = sizeof(errbuf);
+				}
+			}
+
+			if (espace == 0) {
+				int n = sizeof(errbuf);
+
+				if (xdebug)
+					fprintf(stderr, "Child: %*.*s", n, n, errbuf);
+
+				if (!xnolog) {
+					openlog("request-key", 0, LOG_AUTHPRIV);
+					syslog(LOG_ERR, "Child: %*.*s", n, n, errbuf);
+					closelog();
+				}
+
+				pe = errbuf;
+				espace = sizeof(errbuf);
+			}
+		}
+
+	} while (TOSTDIN != -1 || FROMSTDOUT != -1 || FROMSTDERR != -1);
 
 	/* wait for the program to exit */
 	if (waitpid(childpid, &tmp, 0) != childpid)
@@ -704,7 +826,7 @@ static void pipe_to_program(char *op,
 
 		norecurse = 1;
 		debug("child exited %d\n", WEXITSTATUS(tmp));
-		lookup_action(op, key, ktype, kdesc, "negate");
+		lookup_action("negate", key, ktype, kdesc, callout_info);
 	}
 
 	if (WIFSIGNALED(tmp)) {
@@ -713,13 +835,16 @@ static void pipe_to_program(char *op,
 
 		norecurse = 1;
 		debug("child died on signal %d\n", WTERMSIG(tmp));
-		lookup_action(op, key, ktype, kdesc, "negate");
+		lookup_action("negate", key, ktype, kdesc, callout_info);
 	}
 
 	/* attempt to instantiate the key */
-	if (tmp < keyctl_instantiate(key, payload, pp - payload, 0))
+	debug("instantiate with %zd bytes\n", pp - payload);
+
+	if (keyctl_instantiate(key, payload, pp - payload, 0) < 0)
 		error("instantiate key failed: %m\n");
 
+	debug("instantiation successful\n");
 	exit(0);
 
 } /* end pipe_to_program() */
