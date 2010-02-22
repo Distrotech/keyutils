@@ -15,11 +15,17 @@ keyctl - Key management facility control
 .br
 \fBkeyctl\fR add <type> <desc> <data> <keyring>
 .br
+\fBkeyctl\fR padd <type> <desc> <keyring>
+.br
 \fBkeyctl\fR request <type> <desc> [<dest_keyring>]
 .br
 \fBkeyctl\fR request2 <type> <desc> <info> [<dest_keyring>]
 .br
+\fBkeyctl\fR prequest2 <type> <desc> [<dest_keyring>]
+.br
 \fBkeyctl\fR update <key> <data>
+.br
+\fBkeyctl\fR pupdate <key>
 .br
 \fBkeyctl\fR newring <name> <keyring>
 .br
@@ -60,6 +66,8 @@ keyctl - Key management facility control
 \fBkeyctl\fR session <name> [<prog> <arg1> <arg2> ...]
 .br
 \fBkeyctl\fR instantiate <key> <data> <keyring>
+.br
+\fBkeyctl\fR pinstantiate <key> <keyring>
 .br
 \fBkeyctl\fR negate <key> <timeout> <keyring>
 .br
@@ -128,6 +136,8 @@ what keys and keyrings they contain.
 (*) \fBAdd a key to a keyring\fR
 .P
 \fBkeyctl add\fR <type> <desc> <data> <keyring>
+.br
+\fBkeyctl padd\fR <type> <desc> <keyring>
 .P
 This command creates a key of the specified type and description; instantiates
 it with the given data and attaches it to the specified keyring. It then prints
@@ -139,22 +149,36 @@ testbox>keyctl add user mykey stuff @u
 26
 .RE
 .P
+The \fBpadd\fR variant of the command reads the data from stdin rather than
+taking it from the command line:
+.P
+.RS
+testbox>echo -n stuff | keyctl padd user mykey @u
+.br
+26
+.RE
+.P
 (*) \fBRequest a key\fR
 .P
 \fBkeyctl request\fR <type> <desc> [<dest_keyring>]
 .br
 \fBkeyctl request2\fR <type> <desc> <info> [<dest_keyring>]
+.br
+\fBkeyctl prequest2\fR <type> <desc> [<dest_keyring>]
 .P
-These two commands request the lookup of a key of the given type and
+These three commands request the lookup of a key of the given type and
 description. The process's keyrings will be searched, and if a match is found
 the matching key's ID will be printed to stdout; and if a destination keyring
 is given, the key will be added to that keyring also.
 .P
 If there is no key, the first command will simply return the error ENOKEY and
-fail. The second command will create a partial key with the type and
+fail. The second and third commands will create a partial key with the type and
 description, and call out to \fB/sbin/request-key\fR with that key and the
-extra information supplied above. This will then attempt to instantiate the key
-in some manner, such that a valid key is obtained.
+extra information supplied. This will then attempt to instantiate the key in
+some manner, such that a valid key is obtained.
+.P
+The third command is like the second, except that the callout information is
+read from stdin rather than being passed on the command line.
 .P
 If a valid key is obtained, the ID will be printed and the key attached as if
 the original search had succeeded.
@@ -168,6 +192,10 @@ testbox>keyctl request2 user debug:hello wibble
 .br
 23
 .br
+testbox>echo -n wibble | keyctl prequest2 user debug:hello
+.br
+23
+.br
 testbox>keyctl request user debug:hello
 .br
 23
@@ -176,6 +204,8 @@ testbox>keyctl request user debug:hello
 (*) \fBUpdate a key\fR
 .P
 \fBkeyctl update\fR <key> <data>
+.br
+\fBkeyctl pupdate\fR <key>
 .P
 This command replaces the data attached to a key with a new set of data. If the
 type of the key doesn't support update then error "Operation not supported"
@@ -183,6 +213,13 @@ will be returned.
 .P
 .RS
 testbox>keyctl update 23 zebra
+.RE
+.P
+The \fBpupdate\fR variant of the command reads the data from stdin rather than
+taking it from the command line:
+.P
+.RS
+testbox>echo -n zebra | keyctl pupdate 23
 .RE
 .P
 (*) \fBCreate a keyring\fR
@@ -500,6 +537,8 @@ keyring;4043;4043;3f1f0000;fish
 .P
 \fBkeyctl instantiate\fR <key> <data> <keyring>
 .br
+\fBkeyctl pinstantiate\fR <key> <keyring>
+.br
 \fBkeyctl negate\fR <key> <timeout> <keyring>
 .P
 These commands are used to attach data to a partially set up key (as created by
@@ -521,6 +560,13 @@ has been instantiated one way or another.
 testbox>keyctl instantiate $1 "Debug $3" $4
 .br
 testbox>keyctl negate $1 30 $4
+.RE
+.P
+The \fBpinstantiate\fR variant of the command reads the data from stdin rather
+than taking it from the command line:
+.P
+.RS
+testbox>echo -n "Debug $3" | keyctl pinstantiate $1 $4
 .RE
 .P
 (*) \fBSet the expiry time on a key\fR

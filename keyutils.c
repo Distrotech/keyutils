@@ -1,4 +1,4 @@
-/* keyutil.c: key utility library
+/* keyutils.c: key utility library
  *
  * Copyright (C) 2005 Red Hat, Inc. All Rights Reserved.
  * Written by David Howells (dhowells@redhat.com)
@@ -18,7 +18,7 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include <asm/unistd.h>
-#include "keyutil.h"
+#include "keyutils.h"
 
 #ifdef NO_GLIBC_KEYERR
 static int error_inited;

@@ -29,7 +29,7 @@
 #include <ctype.h>
 #include <sys/select.h>
 #include <sys/wait.h>
-#include "keyutil.h"
+#include "keyutils.h"
 
 
 static int xdebug;
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 {
 	key_serial_t key;
 	char *ktype, *kdesc, *buf, *callout_info;
-	int ret, ntype, dpos, dlen, fd;
+	int ret, ntype, dpos, n, fd;
 
 	signal(SIGSEGV, oops);
 	signal(SIGBUS, oops);
@@ -176,9 +176,11 @@ int main(int argc, char *argv[])
 
 	key = atoi(xkey);
 
-	/* assume authority over the key */
+	/* assume authority over the key
+	 * - older kernel doesn't support this function
+	 */
 	ret = keyctl_assume_authority(key);
-	if (ret < 0)
+	if (ret < 0 && !(argc == 9 || errno == EOPNOTSUPP))
 		error("Failed to assume authority over key %d (%m)\n", key);
 
 	/* ask the kernel to describe the key to us */
@@ -195,10 +197,9 @@ int main(int argc, char *argv[])
 	debug("Key descriptor: \"%s\"\n", buf);
 	ntype = -1;
 	dpos = -1;
-	dlen = -1;
 
-	sscanf(buf, "%*[^;]%n;%*d;%*d;%*x;%n%*[^;]%n", &ntype, &dpos, &dlen);
-	if (dlen == -1)
+	n = sscanf(buf, "%*[^;]%n;%*d;%*d;%x;%n", &ntype, &n, &dpos);
+	if (n != 1)
 		error("Failed to parse key description\n");
 
 	ktype = buf;
@@ -708,7 +709,10 @@ static void pipe_to_program(char *op,
 		if (tmp < 0)
 			error("select failed: %m\n");
 
-		debug("select -> %d r=%x w=%x\n", tmp, *(unsigned *) &rfds, *(unsigned *) &wfds);
+		debug("select -> %d r=%x w=%x\n",
+		      tmp,
+		      *(unsigned *) (void *) &rfds,
+		      *(unsigned *) (void *) &wfds);
 
 		if (TOSTDIN != -1 && FD_ISSET(TOSTDIN, &wfds)) {
 			tmp = write(TOSTDIN, pc, ninfo);

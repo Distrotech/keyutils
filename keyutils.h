@@ -1,4 +1,4 @@
-/* keyutil.h: key utility library interface
+/* keyutils.h: key utility library interface
  *
  * Copyright (C) 2005 Red Hat, Inc. All Rights Reserved.
  * Written by David Howells (dhowells@redhat.com)
@@ -9,8 +9,8 @@
  * 2 of the License, or (at your option) any later version.
  */
 
-#ifndef KEYUTIL_H
-#define KEYUTIL_H
+#ifndef KEYUTILS_H
+#define KEYUTILS_H
 
 #include <stdint.h>
 
@@ -140,4 +140,4 @@ extern int keyctl_describe_alloc(key_serial_t id, char **_buffer);
 extern int keyctl_read_alloc(key_serial_t id, void **_buffer);
 
 
-#endif /* KEYUTIL_H */
+#endif /* KEYUTILS_H */

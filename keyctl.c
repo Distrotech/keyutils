@@ -18,7 +18,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <asm/unistd.h>
-#include "keyutil.h"
+#include "keyutils.h"
 
 struct command {
 	int (*action)(int argc, char *argv[]);
@@ -28,9 +28,12 @@ struct command {
 
 static int act_keyctl_show(int argc, char *argv[]);
 static int act_keyctl_add(int argc, char *argv[]);
+static int act_keyctl_padd(int argc, char *argv[]);
 static int act_keyctl_request(int argc, char *argv[]);
 static int act_keyctl_request2(int argc, char *argv[]);
+static int act_keyctl_prequest2(int argc, char *argv[]);
 static int act_keyctl_update(int argc, char *argv[]);
+static int act_keyctl_pupdate(int argc, char *argv[]);
 static int act_keyctl_newring(int argc, char *argv[]);
 static int act_keyctl_revoke(int argc, char *argv[]);
 static int act_keyctl_clear(int argc, char *argv[]);
@@ -49,15 +52,19 @@ static int act_keyctl_chgrp(int argc, char *argv[]);
 static int act_keyctl_setperm(int argc, char *argv[]);
 static int act_keyctl_session(int argc, char *argv[]);
 static int act_keyctl_instantiate(int argc, char *argv[]);
+static int act_keyctl_pinstantiate(int argc, char *argv[]);
 static int act_keyctl_negate(int argc, char *argv[]);
 static int act_keyctl_timeout(int argc, char *argv[]);
 
 const struct command commands[] = {
 	{ act_keyctl_show,	"show",		"" },
 	{ act_keyctl_add,	"add",		"<type> <desc> <data> <keyring>" },
+	{ act_keyctl_padd,	"padd",		"<type> <desc> <keyring>" },
 	{ act_keyctl_request,	"request",	"<type> <desc> [<dest_keyring>]" },
 	{ act_keyctl_request2,	"request2",	"<type> <desc> <info> [<dest_keyring>]" },
+	{ act_keyctl_prequest2,	"prequest2",	"<type> <desc> [<dest_keyring>]" },
 	{ act_keyctl_update,	"update",	"<key> <data>" },
+	{ act_keyctl_pupdate,	"pupdate",	"<key>" },
 	{ act_keyctl_newring,	"newring",	"<name> <keyring>" },
 	{ act_keyctl_revoke,	"revoke",	"<key>" },
 	{ act_keyctl_clear,	"clear",	"<keyring>" },
@@ -78,6 +85,7 @@ const struct command commands[] = {
 	{ act_keyctl_session,	"session",	"- [<prog> <arg1> <arg2> ...]" },
 	{ act_keyctl_session,	"session",	"<name> [<prog> <arg1> <arg2> ...]" },
 	{ act_keyctl_instantiate, "instantiate","<key> <data> <keyring>" },
+	{ act_keyctl_pinstantiate, "pinstantiate","<key> <keyring>" },
 	{ act_keyctl_negate,	"negate",	"<key> <timeout> <keyring>" },
 	{ act_keyctl_timeout,	"timeout",	"<key> <timeout>" },
 	{ NULL, NULL, NULL }
@@ -87,6 +95,21 @@ static int dump_key_tree(key_serial_t keyring, const char *name);
 static void format(void) __attribute__((noreturn));
 static void error(const char *msg) __attribute__((noreturn));
 static key_serial_t get_key_id(const char *arg);
+
+static uid_t myuid;
+static gid_t mygid, *mygroups;
+static int myngroups;
+
+/*****************************************************************************/
+/*
+ * handle an error
+ */
+static inline void error(const char *msg)
+{
+	perror(msg);
+	exit(1);
+
+} /* end error() */
 
 /*****************************************************************************/
 /*
@@ -131,6 +154,22 @@ int main(int argc, char *argv[])
 		exit(2);
 	}
 
+	/* grab my UID, GID and groups */
+	myuid = geteuid();
+	mygid = getegid();
+	myngroups = getgroups(0, NULL);
+
+	if (myuid == -1 || mygid == -1 || myngroups == -1)
+		error("Unable to get UID/GID/#Groups\n");
+
+	mygroups = calloc(myngroups, sizeof(gid_t));
+	if (!mygroups)
+		error("calloc");
+
+	myngroups = getgroups(myngroups, mygroups);
+	if (myngroups < 0)
+		error("Unable to get Groups\n");
+
 	return best->action(argc, argv);
 
 } /* end main() */
@@ -168,14 +207,82 @@ static void format(void)
 
 /*****************************************************************************/
 /*
- * handle an error
+ * grab data from stdin
  */
-static inline void error(const char *msg)
+static char *grab_stdin(void)
 {
-	perror(msg);
-	exit(1);
+	static char input[65536 + 1];
+	int n, tmp;
 
-} /* end error() */
+	n = 0;
+	do {
+		tmp = read(0, input + n, sizeof(input) - 1 - n);
+		if (tmp < 0)
+			error("stdin");
+
+		if (tmp == 0)
+			break;
+
+		n += tmp;
+
+	} while (n < sizeof(input));
+
+	if (n >= sizeof(input)) {
+		fprintf(stderr, "Too much data read on stdin\n");
+		exit(1);
+	}
+
+	input[n] = '\0';
+
+	return input;
+
+} /* end grab_stdin() */
+
+/*****************************************************************************/
+/*
+ * convert the permissions mask to a string representing the permissions we
+ * have actually been granted
+ */
+static void calc_perms(char *pretty, key_perm_t perm, uid_t uid, gid_t gid)
+{
+	unsigned perms;
+	gid_t *pg;
+	int loop;
+
+	perms = (perm & KEY_POS_ALL) >> 24;
+
+	if (uid == myuid) {
+		perms |= (perm & KEY_USR_ALL) >> 16;
+		goto write_mask;
+	}
+
+	if (gid != -1) {
+		if (gid == mygid) {
+			perms |= (perm & KEY_GRP_ALL) >> 8;
+			goto write_mask;
+		}
+
+		pg = mygroups;
+		for (loop = myngroups; loop > 0; loop--, pg++) {
+			if (gid == *pg) {
+				perms |= (perm & KEY_GRP_ALL) >> 8;
+				goto write_mask;
+			}
+		}
+	}
+
+	perms |= (perm & KEY_OTH_ALL);
+
+write_mask:
+	sprintf(pretty, "--%c%c%c%c%c%c",
+		perms & KEY_OTH_SETATTR	? 'a' : '-',
+		perms & KEY_OTH_LINK	? 'l' : '-',
+		perms & KEY_OTH_SEARCH	? 's' : '-',
+		perms & KEY_OTH_WRITE	? 'w' : '-',
+		perms & KEY_OTH_READ	? 'r' : '-',
+		perms & KEY_OTH_VIEW	? 'v' : '-');
+
+} /* end calc_perms() */
 
 /*****************************************************************************/
 /*
@@ -214,6 +321,28 @@ static int act_keyctl_add(int argc, char *argv[])
 	return 0;
 
 } /* end act_keyctl_add() */
+
+/*****************************************************************************/
+/*
+ * add a key, reading from a pipe
+ */
+static int act_keyctl_padd(int argc, char *argv[])
+{
+	char *args[6];
+
+	if (argc != 4)
+		format();
+
+	args[0] = argv[0];
+	args[1] = argv[1];
+	args[2] = argv[2];
+	args[3] = grab_stdin();
+	args[4] = argv[3];
+	args[5] = NULL;
+
+	return act_keyctl_add(5, args);
+
+} /* end act_keyctl_padd() */
 
 /*****************************************************************************/
 /*
@@ -269,6 +398,29 @@ static int act_keyctl_request2(int argc, char *argv[])
 
 /*****************************************************************************/
 /*
+ * request a key, with recourse to /sbin/request-key, reading the callout info
+ * from a pipe
+ */
+static int act_keyctl_prequest2(int argc, char *argv[])
+{
+	char *args[6];
+
+	if (argc != 3 && argc != 4)
+		format();
+
+	args[0] = argv[0];
+	args[1] = argv[1];
+	args[2] = argv[2];
+	args[3] = grab_stdin();
+	args[4] = argv[3];
+	args[5] = NULL;
+
+	return act_keyctl_request2(argc + 1, args);
+
+} /* end act_keyctl_prequest2() */
+
+/*****************************************************************************/
+/*
  * update a key
  */
 static int act_keyctl_update(int argc, char *argv[])
@@ -286,6 +438,26 @@ static int act_keyctl_update(int argc, char *argv[])
 	return 0;
 
 } /* end act_keyctl_update() */
+
+/*****************************************************************************/
+/*
+ * update a key, reading from a pipe
+ */
+static int act_keyctl_pupdate(int argc, char *argv[])
+{
+	char *args[4];
+
+	if (argc != 2)
+		format();
+
+	args[0] = argv[0];
+	args[1] = argv[1];
+	args[2] = grab_stdin();
+	args[3] = NULL;
+
+	return act_keyctl_update(3, args);
+
+} /* end act_keyctl_pupdate() */
 
 /*****************************************************************************/
 /*
@@ -495,8 +667,8 @@ static int act_keyctl_pipe(int argc, char *argv[])
 	if (ret < 0)
 		error("keyctl_read_alloc");
 
-	if (ret > 0)
-		write(1, buffer, ret);
+	if (ret > 0 && write(1, buffer, ret) < 0)
+		error("write");
 	return 0;
 
 } /* end act_keyctl_pipe() */
@@ -552,10 +724,10 @@ static int act_keyctl_list(int argc, char *argv[])
 	key_serial_t keyring, key, *pk;
 	key_perm_t perm;
 	void *keylist;
-	char *buffer;
+	char *buffer, pretty_mask[9];
 	uid_t uid;
 	gid_t gid;
-	int count, tlen, dpos, dlen, ret;
+	int count, tlen, dpos, n, ret;
 
 	if (argc != 2)
 		format();
@@ -596,32 +768,19 @@ static int act_keyctl_list(int argc, char *argv[])
 
 		tlen = -1;
 		dpos = -1;
-		dlen = -1;
 
-		sscanf((char *) buffer, "%*[^;]%n;%d;%d;%x;%n%*[^;]%n",
-		       &tlen, &uid, &gid, &perm, &dpos, &dlen);
-		if (dlen == -1) {
+		n = sscanf((char *) buffer, "%*[^;]%n;%d;%d;%x;%n",
+			   &tlen, &uid, &gid, &perm, &dpos);
+		if (n != 3) {
 			fprintf(stderr, "Unparseable description obtained for key %d\n", key);
 			exit(3);
 		}
 
-		printf("%9d: %c%c%c%c%c%c%c%c%c%c%c%c%c%c%c %5d %5d %*.*s: %s\n",
+		calc_perms(pretty_mask, perm, uid, gid);
+
+		printf("%9d: %s %5d %5d %*.*s: %s\n",
 		       key,
-		       perm & KEY_USR_VIEW	? 'v' : '-',
-		       perm & KEY_USR_READ	? 'r' : '-',
-		       perm & KEY_USR_WRITE	? 'w' : '-',
-		       perm & KEY_USR_SEARCH	? 's' : '-',
-		       perm & KEY_USR_LINK	? 'l' : '-',
-		       perm & KEY_GRP_VIEW	? 'v' : '-',
-		       perm & KEY_GRP_READ	? 'r' : '-',
-		       perm & KEY_GRP_WRITE	? 'w' : '-',
-		       perm & KEY_GRP_SEARCH	? 's' : '-',
-		       perm & KEY_GRP_LINK	? 'l' : '-',
-		       perm & KEY_OTH_VIEW	? 'v' : '-',
-		       perm & KEY_OTH_READ	? 'r' : '-',
-		       perm & KEY_OTH_WRITE	? 'w' : '-',
-		       perm & KEY_OTH_SEARCH	? 's' : '-',
-		       perm & KEY_OTH_LINK	? 'l' : '-',
+		       pretty_mask,
 		       uid, gid,
 		       tlen, tlen, buffer,
 		       buffer + dpos);
@@ -683,7 +842,7 @@ static int act_keyctl_describe(int argc, char *argv[])
 	char *buffer;
 	uid_t uid;
 	gid_t gid;
-	int tlen, dpos, dlen, ret;
+	int tlen, dpos, n, ret;
 
 	if (argc != 2)
 		format();
@@ -702,33 +861,46 @@ static int act_keyctl_describe(int argc, char *argv[])
 
 	tlen = -1;
 	dpos = -1;
-	dlen = -1;
 
-	sscanf(buffer, "%*[^;]%n;%d;%d;%x;%n%*[^;]%n",
-	       &tlen, &uid, &gid, &perm, &dpos, &dlen);
-	if (dlen == -1) {
+	n = sscanf(buffer, "%*[^;]%n;%d;%d;%x;%n",
+		   &tlen, &uid, &gid, &perm, &dpos);
+	if (n != 3) {
 		fprintf(stderr, "Unparseable description obtained for key %d\n", key);
 		exit(3);
 	}
 
 	/* display it */
-	printf("%9d: %c%c%c%c%c%c%c%c%c%c%c%c%c%c%c %5d %5d %*.*s: %s\n",
+	printf("%9d:"
+	       " %c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c"
+	       " %5d %5d %*.*s: %s\n",
 	       key,
-	       perm & KEY_USR_VIEW	? 'v' : '-',
-	       perm & KEY_USR_READ	? 'r' : '-',
-	       perm & KEY_USR_WRITE	? 'w' : '-',
-	       perm & KEY_USR_SEARCH	? 's' : '-',
+	       perm & KEY_POS_SETATTR	? 'a' : '-',
+	       perm & KEY_POS_LINK	? 'l' : '-',
+	       perm & KEY_POS_SEARCH	? 's' : '-',
+	       perm & KEY_POS_WRITE	? 'w' : '-',
+	       perm & KEY_POS_READ	? 'r' : '-',
+	       perm & KEY_POS_VIEW	? 'v' : '-',
+
+	       perm & KEY_USR_SETATTR	? 'a' : '-',
 	       perm & KEY_USR_LINK	? 'l' : '-',
-	       perm & KEY_GRP_VIEW	? 'v' : '-',
-	       perm & KEY_GRP_READ	? 'r' : '-',
-	       perm & KEY_GRP_WRITE	? 'w' : '-',
-	       perm & KEY_GRP_SEARCH	? 's' : '-',
+	       perm & KEY_USR_SEARCH	? 's' : '-',
+	       perm & KEY_USR_WRITE	? 'w' : '-',
+	       perm & KEY_USR_READ	? 'r' : '-',
+	       perm & KEY_USR_VIEW	? 'v' : '-',
+
+	       perm & KEY_GRP_SETATTR	? 'a' : '-',
 	       perm & KEY_GRP_LINK	? 'l' : '-',
-	       perm & KEY_OTH_VIEW	? 'v' : '-',
-	       perm & KEY_OTH_READ	? 'r' : '-',
-	       perm & KEY_OTH_WRITE	? 'w' : '-',
-	       perm & KEY_OTH_SEARCH	? 's' : '-',
+	       perm & KEY_GRP_SEARCH	? 's' : '-',
+	       perm & KEY_GRP_WRITE	? 'w' : '-',
+	       perm & KEY_GRP_READ	? 'r' : '-',
+	       perm & KEY_GRP_VIEW	? 'v' : '-',
+
+	       perm & KEY_OTH_SETATTR	? 'a' : '-',
 	       perm & KEY_OTH_LINK	? 'l' : '-',
+	       perm & KEY_OTH_SEARCH	? 's' : '-',
+	       perm & KEY_OTH_WRITE	? 'w' : '-',
+	       perm & KEY_OTH_READ	? 'r' : '-',
+	       perm & KEY_OTH_VIEW	? 'v' : '-',
 	       uid, gid,
 	       tlen, tlen, buffer,
 	       buffer + dpos);
@@ -925,6 +1097,27 @@ static int act_keyctl_instantiate(int argc, char *argv[])
 
 /*****************************************************************************/
 /*
+ * instantiate a key, reading from a pipe
+ */
+static int act_keyctl_pinstantiate(int argc, char *argv[])
+{
+	char *args[5];
+
+	if (argc != 3)
+		format();
+
+	args[0] = argv[0];
+	args[1] = argv[1];
+	args[2] = grab_stdin();
+	args[3] = argv[2];
+	args[4] = NULL;
+
+	return act_keyctl_instantiate(4, args);
+
+} /* end act_keyctl_pinstantiate() */
+
+/*****************************************************************************/
+/*
  * negate a key that's under construction
  */
 static int act_keyctl_negate(int argc, char *argv[])
@@ -1026,8 +1219,8 @@ static int dump_key_tree_aux(key_serial_t key, int depth, int more)
 	key_perm_t perm;
 	size_t ringlen, desclen;
 	void *payload;
-	char *desc, type[255];
-	int uid, gid, ret, n, rdepth, kcount = 0;
+	char *desc, type[255], pretty_mask[9];
+	int uid, gid, ret, n, dpos, rdepth, kcount = 0;
 
 	if (depth > 8)
 		return 0;
@@ -1061,34 +1254,25 @@ static int dump_key_tree_aux(key_serial_t key, int depth, int more)
 	uid = 0;
 	gid = 0;
 	perm = 0;
-	sscanf(desc, "%[^;];%d;%d;%x;%n",
-	       type, &uid, &gid, &perm, &n);
+
+	n = sscanf(desc, "%[^;];%d;%d;%x;%n",
+		   type, &uid, &gid, &perm, &dpos);
+
+	if (n != 4) {
+		fprintf(stderr, "Unparseable description obtained for key %d\n", key);
+		exit(3);
+	}
 
 	/* and print */
-	printf("%9d"
-	       " %c%c%c%c%c%c%c%c%c%c%c%c%c%c%c %5d %5d "
-	       " %s%s%s: %s\n"
-	       ,
+	calc_perms(pretty_mask, perm, uid, gid);
+
+	printf("%9d %s  %5d %5d  %s%s%s: %s\n",
 	       key,
-	       perm & KEY_USR_LINK	? 'l' : '-',
-	       perm & KEY_USR_SEARCH	? 's' : '-',
-	       perm & KEY_USR_WRITE	? 'w' : '-',
-	       perm & KEY_USR_READ	? 'r' : '-',
-	       perm & KEY_USR_VIEW	? 'v' : '-',
-	       perm & KEY_GRP_LINK	? 'l' : '-',
-	       perm & KEY_GRP_SEARCH	? 's' : '-',
-	       perm & KEY_GRP_WRITE	? 'w' : '-',
-	       perm & KEY_GRP_READ	? 'r' : '-',
-	       perm & KEY_GRP_VIEW	? 'v' : '-',
-	       perm & KEY_OTH_LINK	? 'l' : '-',
-	       perm & KEY_OTH_SEARCH	? 's' : '-',
-	       perm & KEY_OTH_WRITE	? 'w' : '-',
-	       perm & KEY_OTH_READ	? 'r' : '-',
-	       perm & KEY_OTH_VIEW	? 'v' : '-',
+	       pretty_mask,
 	       uid, gid,
 	       dumpindent,
 	       depth > 0 ? "\\_ " : "",
-	       type, desc + n);
+	       type, desc + dpos);
 
 	/* if it's a keyring then we're going to want to recursively
 	 * display it if we can */
