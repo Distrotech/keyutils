@@ -2,7 +2,7 @@ CFLAGS		:= -g -O2 -Wall
 INSTALL		:= install
 DESTDIR		:=
 MAJOR		:= 1
-MINOR		:= 1
+MINOR		:= 2
 VERSION		:= $(MAJOR).$(MINOR)
 NO_GLIBC_KEYERR	:= 0
 NO_GLIBC_KEYSYS	:= 0
@@ -80,7 +80,6 @@ request-key: request-key.c keyutils.h Makefile
 
 
 MAN1	:= $(DESTDIR)/usr/share/man/man1
-MAN2	:= $(DESTDIR)/usr/share/man/man2
 MAN3	:= $(DESTDIR)/usr/share/man/man3
 MAN5	:= $(DESTDIR)/usr/share/man/man5
 MAN8	:= $(DESTDIR)/usr/share/man/man8
@@ -98,9 +97,6 @@ endif
 	$(INSTALL) -D request-key-debug.sh $(DESTDIR)$(SHAREDIR)/request-key-debug.sh
 	$(INSTALL) -D -m 0644 request-key.conf $(DESTDIR)$(ETCDIR)/request-key.conf
 	$(INSTALL) -D -m 0644 keyctl.1 $(MAN1)/keyctl.1
-	$(INSTALL) -D -m 0644 add_key.2 $(MAN2)/add_key.2
-	$(INSTALL) -D -m 0644 keyctl.2 $(MAN2)/keyctl.2
-	$(INSTALL) -D -m 0644 request_key.2 $(MAN2)/request_key.2
 	$(INSTALL) -D -m 0644 keyctl_chown.3 $(MAN3)/keyctl_chown.3
 	$(INSTALL) -D -m 0644 keyctl_clear.3 $(MAN3)/keyctl_clear.3
 	$(INSTALL) -D -m 0644 keyctl_describe.3 $(MAN3)/keyctl_describe.3

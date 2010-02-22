@@ -1,12 +1,12 @@
 %define vermajor 1
-%define version %{vermajor}.1
+%define version %{vermajor}.2
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
 
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 3%{?dist}
+Release: 1%{?dist}
 License: GPL/LGPL
 Group: System Environment/Base
 ExclusiveOS: Linux
@@ -62,6 +62,9 @@ make \
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+%post libs -p /sbin/ldconfig
+%postun libs -p /sbin/ldconfig
+
 %files
 %defattr(-,root,root,-)
 %doc README LICENCE.GPL
@@ -83,10 +86,16 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %{usrlibdir}/libkeyutils.so
 %{_includedir}/*
-%{_mandir}/man2/*
 %{_mandir}/man3/*
 
 %changelog
+* Tue Aug 22 2006 David Howells <dhowells@redhat.com> - 1.2-1
+- Remove syscall manual pages (section 2) to man-pages package [BZ 203582]
+- Don't write to serial port in debugging script
+
+* Mon Jun 5 2006 David Howells <dhowells@redhat.com> - 1.1-4
+- Call ldconfig during (un)installation.
+
 * Fri May 5 2006 David Howells <dhowells@redhat.com> - 1.1-3
 - Don't include the release number in the shared library filename
 - Don't build static library
