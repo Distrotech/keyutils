@@ -654,11 +654,16 @@ static int act_keyctl_rlist(int argc, char *argv[])
 	count /= sizeof(key_serial_t);
 
 	/* list the keys in the keyring */
-	pk = keylist;
-	do {
-		key = *pk++;
-		printf("%d%c", key, count == 1 ? '\n' : ' ');
-	} while (--count);
+	if (count <= 0) {
+		printf("\n");
+	}
+	else {
+		pk = keylist;
+		for (; count > 0; count--) {
+			key = *pk++;
+			printf("%d%c", key, count == 1 ? '\n' : ' ');
+		}
+	}
 
 	return 0;
 

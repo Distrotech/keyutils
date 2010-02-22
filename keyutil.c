@@ -22,9 +22,9 @@
 
 #ifdef NO_GLIBC_KEYERR
 static int error_inited;
-static int (*libc_xpg_strerror_r)(int errnum, char *buf, size_t n);
-static char *(*libc_strerror_r)(int errnum, char *buf, size_t n);
 static void (*libc_perror)(const char *msg);
+static char *(*libc_strerror_r)(int errnum, char *buf, size_t n);
+//static int (*libc_xpg_strerror_r)(int errnum, char *buf, size_t n);
 #define RTLD_NEXT      ((void *) -1L)
 #endif
 
@@ -241,16 +241,46 @@ int keyctl_read_alloc(key_serial_t id, void **_buffer)
  */
 static void error_init(void)
 {
-	libc_xpg_strerror_r = dlsym(RTLD_NEXT,"xpg_strerror_r");
-	if (!libc_xpg_strerror_r)
-		abort();
-	libc_strerror_r = dlsym(RTLD_NEXT,"strerror_r");
-	if (!libc_strerror_r)
-		abort();
-	libc_perror = dlsym(RTLD_NEXT,"perror");
-	if (!libc_perror)
-		abort();
+	char *err;
+
 	error_inited = 1;
+
+	dlerror();
+
+	libc_perror = dlsym(RTLD_NEXT,"perror");
+	if (!libc_perror) {
+		fprintf(stderr, "Failed to look up next perror\n");
+		err = dlerror();
+		if (err)
+			fprintf(stderr, "%s\n", err);
+		abort();
+	}
+
+	//fprintf(stderr, "next perror at %p\n", libc_perror);
+
+	libc_strerror_r = dlsym(RTLD_NEXT,"strerror_r");
+	if (!libc_strerror_r) {
+		fprintf(stderr, "Failed to look up next strerror_r\n");
+		err = dlerror();
+		if (err)
+			fprintf(stderr, "%s\n", err);
+		abort();
+	}
+
+	//fprintf(stderr, "next strerror_r at %p\n", libc_strerror_r);
+
+#if 0
+	libc_xpg_strerror_r = dlsym(RTLD_NEXT,"xpg_strerror_r");
+	if (!libc_xpg_strerror_r) {
+		fprintf(stderr, "Failed to look up next xpg_strerror_r\n");
+		err = dlerror();
+		if (err)
+			fprintf(stderr, "%s\n", err);
+		abort();
+	}
+
+	//fprintf(stderr, "next xpg_strerror_r at %p\n", libc_xpg_strerror_r);
+#endif
 
 } /* end error_init() */
 
@@ -305,6 +335,7 @@ char *strerror_r(int errnum, char *buf, size_t n)
 
 } /* end strerror_r() */
 
+#if 0
 /*****************************************************************************/
 /*
  * overload glibc's strerror_r() with a version that knows about key errors
@@ -353,6 +384,7 @@ int xpg_strerror_r(int errnum, char *buf, size_t n)
 	}
 
 } /* end xpg_strerror_r() */
+#endif
 
 /*****************************************************************************/
 /*
@@ -360,6 +392,9 @@ int xpg_strerror_r(int errnum, char *buf, size_t n)
  */
 void perror(const char *msg)
 {
+	if (!error_inited)
+		error_init();
+
 	switch (errno) {
 	case ENOKEY:
 		fprintf(stderr, "%s: Requested key not available\n", msg);

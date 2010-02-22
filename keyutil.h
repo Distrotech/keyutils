@@ -74,20 +74,6 @@ typedef uint32_t key_perm_t;
 #define KEYCTL_NEGATE			13	/* negate a partially constructed key */
 #define KEYCTL_SET_REQKEY_KEYRING	14	/* set default request-key keyring */
 
-/* key management error codes */
-#ifdef NO_GLIBC_KEYERR
-#if defined(__i386__) || defined(__PPC64__) || defined(__PPC__) || defined(__x86_64__)
-
-#define	ENOKEY		126	/* Required key not available */
-#define	EKEYEXPIRED	127	/* Key has expired */
-#define	EKEYREVOKED	128	/* Key has been revoked */
-#define	EKEYREJECTED	129	/* Key was rejected by service */
-
-#else
-#error key management error codes not supported on this arch
-#endif
-#endif
-
 /*
  * syscall wrappers
  */
