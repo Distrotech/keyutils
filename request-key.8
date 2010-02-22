@@ -7,12 +7,12 @@
 .\" as published by the Free Software Foundation; either version
 .\" 2 of the License, or (at your option) any later version.
 .\"
-.TH REQUEST-KEY 8 "11 July 2005" Linux "Linux Key Management Utilities"
+.TH REQUEST-KEY 8 "17 Nov 2005" Linux "Linux Key Management Utilities"
 .SH NAME
 request-key - Handle key instantiation callback requests from the kernel
 .SH SYNOPSIS
 \fB/sbin/request-key \fR<op> <key> <uid> <gid> <threadring> <processring>
-	<sessionring> <info>
+	<sessionring> [<info>]
 .SH DESCRIPTION
 This program is invoked by the kernel when the kernel is asked for a key that
 it doesn't have immediately available. The kernel creates a partially set up

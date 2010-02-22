@@ -1,6 +1,6 @@
 /* request-key.c: hand a key request off to the appropriate process
  *
- * Copyright (C) 2004 Red Hat, Inc. All Rights Reserved.
+ * Copyright (C) 2005 Red Hat, Inc. All Rights Reserved.
  * Written by David Howells (dhowells@redhat.com)
  *
  * This program is free software; you can redistribute it and/or
@@ -8,7 +8,7 @@
  * as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *
- * /sbin/request-key <op> <key> <uid> <gid> <threadring> <processring> <sessionring> <info>
+ * /sbin/request-key <op> <key> <uid> <gid> <threadring> <processring> <sessionring> [<info>]
  *
  * Searches the specified session ring for a key indicating the command to run:
  *	type:	"user"
@@ -24,7 +24,10 @@
 #include <syslog.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <ctype.h>
+#include <sys/select.h>
+#include <sys/wait.h>
 #include "keyutil.h"
 
 
@@ -37,6 +40,7 @@ static char *xthread_keyring;
 static char *xprocess_keyring;
 static char *xsession_keyring;
 static int confline;
+static int norecurse;
 
 static void lookup_action(char *op,
 			  key_serial_t key,
@@ -46,10 +50,20 @@ static void lookup_action(char *op,
 	__attribute__((noreturn));
 
 static void execute_program(char *op,
+			    key_serial_t key,
 			    char *ktype,
 			    char *kdesc,
 			    char *callout_info,
 			    char *cmdline)
+	__attribute__((noreturn));
+
+static void pipe_to_program(char *op,
+			    key_serial_t key,
+			    char *ktype,
+			    char *kdesc,
+			    char *callout_info,
+			    char *prog,
+			    char **argv)
 	__attribute__((noreturn));
 
 static int match(const char *pattern, int plen, const char *datum, int dlen);
@@ -107,7 +121,7 @@ static void error(const char *fmt, ...)
 int main(int argc, char *argv[])
 {
 	key_serial_t key;
-	char *ktype, *kdesc, *buf;
+	char *ktype, *kdesc, *buf, *callout_info;
 	int ret, ntype, dpos, dlen;
 
 	for (;;) {
@@ -125,7 +139,7 @@ int main(int argc, char *argv[])
 			break;
 	}
 
-	if (argc != 9)
+	if (argc != 8 && argc != 9)
 		error("Unexpected argument count: %d\n", argc);
 
 	xkey = argv[2];
@@ -136,6 +150,11 @@ int main(int argc, char *argv[])
 	xsession_keyring = argv[7];
 
 	key = atoi(xkey);
+
+	/* assume authority over the key */
+	ret = keyctl_assume_authority(key);
+	if (ret < 0)
+		error("Failed to assume authority over key %d (%m)\n", key);
 
 	/* ask the kernel to describe the key to us */
 	if (xdebug <= 0) {
@@ -164,12 +183,24 @@ int main(int argc, char *argv[])
 	debug("Key type: %s\n", ktype);
 	debug("Key desc: %s\n", kdesc);
 
+	/* get hold of the callout info */
+	callout_info = argv[8];
+
+	if (!callout_info) {
+		void *tmp;
+
+		if (keyctl_read_alloc(KEY_SPEC_REQKEY_AUTH_KEY, &tmp) < 0)
+			error("Failed to retrieve callout info (%m)\n");
+
+		callout_info = tmp;
+	}
+
 	/* determine the action to perform */
 	lookup_action(argv[1],		/* op */
 		      key,		/* ID of key under construction */
 		      ktype,		/* key type */
 		      kdesc,		/* key description */
-		      argv[8]		/* call out info */
+		      callout_info	/* call out information */
 		      );
 
 inaccessible:
@@ -287,7 +318,7 @@ static void lookup_action(char *op,
 		if (!*p)
 			goto syntax_error;
 
-		execute_program(op, ktype, kdesc, callout_info, p);
+		execute_program(op, key, ktype, kdesc, callout_info, p);
 	}
 
 	error("/etc/request-key.conf: No matching action\n");
@@ -364,6 +395,7 @@ yes:
  * execute a program to deal with a key
  */
 static void execute_program(char *op,
+			    key_serial_t key,
 			    char *ktype,
 			    char *kdesc,
 			    char *callout_info,
@@ -371,9 +403,19 @@ static void execute_program(char *op,
 {
 	char *argv[256];
 	char *prog, *p, *q;
-	int argc;
+	int argc, pipeit;
 
 	debug("execute_program('%s')\n", cmdline);
+
+	/* if the commandline begins with a bar, then we pipe the callout data into it and read
+	 * back the payload data
+	 */
+	pipeit = 0;
+
+	if (cmdline[0] == '|') {
+		pipeit = 1;
+		cmdline++;
+	}
 
 	/* extract the path to the program to run */
 	prog = p = cmdline;
@@ -501,21 +543,183 @@ static void execute_program(char *op,
 
 	argv[argc] = NULL;
 
-	/* become the same UID/GID as the key requesting process */
-	//setgid(atoi(xuid));
-	//setuid(atoi(xgid));
-
-	/* attempt to execute the command */
 	if (xdebug) {
 		char **ap;
 
-		debug("Run %s\n", prog);
+		debug("%s %s\n", pipeit ? "Run" : "PipeThru", prog);
 		for (ap = argv; *ap; ap++)
 			debug("- argv[%zd] = \"%s\"\n", ap - argv, *ap);
 	}
 
+	/* become the same UID/GID as the key requesting process */
+	//setgid(atoi(xuid));
+	//setuid(atoi(xgid));
+
+	/* if the last argument is a single bar, we spawn off the program dangling on the end of
+	 * three pipes and read the key material from the program, otherwise we just exec
+	 */
+	if (pipeit)
+		pipe_to_program(op, key, ktype, kdesc, callout_info, prog, argv);
+
+	/* attempt to execute the command */
 	execv(prog, argv);
 
 	error("/etc/request-key.conf:%d: Failed to execute '%s': %m\n", confline, prog);
 
 } /* end execute_program() */
+
+/*****************************************************************************/
+/*
+ * pipe the callout information to the specified program and retrieve the payload data over another
+ * pipe
+ */
+static void pipe_to_program(char *op,
+			    key_serial_t key,
+			    char *ktype,
+			    char *kdesc,
+			    char *callout_info,
+			    char *prog,
+			    char **argv)
+{
+	char payload[32768 + 1], *pp, *pc;
+	int ipi[2], opi[2], childpid, ifl, ofl, npay, ninfo, tmp;
+
+	if (pipe(ipi) < 0 || pipe(opi) < 0)
+		error("pipe failed: %m");
+
+	childpid = fork();
+	if (childpid == -1)
+		error("fork failed: %m");
+
+	if (childpid == 0) {
+		/* child process */
+		if (dup2(ipi[0], 0) < 0 ||
+		    dup2(opi[1], 1) < 0)
+			error("dup2 failed: %m");
+		close(ipi[0]);
+		close(ipi[1]);
+		close(opi[0]);
+		close(opi[1]);
+
+		execv(prog, argv);
+		error("/etc/request-key.conf:%d: Failed to execute '%s': %m\n", confline, prog);
+	}
+
+	/* parent process */
+	close(ipi[0]);
+	close(opi[1]);
+
+#define TOSTDIN ipi[1]
+#define FROMSTDOUT opi[0]
+
+	ifl = fcntl(TOSTDIN, F_GETFL);
+	ofl = fcntl(FROMSTDOUT, F_GETFL);
+	if (ifl < 0 || ofl < 0)
+		error("fcntl/F_GETFL failed: %m");
+
+	ifl |= O_NONBLOCK;
+	ofl |= O_NONBLOCK;
+
+	if (fcntl(TOSTDIN, F_SETFL, ifl) < 0 ||
+	    fcntl(FROMSTDOUT, F_SETFL, ofl) < 0)
+		error("fcntl/F_SETFL failed: %m");
+
+	npay = sizeof(payload);
+	pp = payload;
+
+	ninfo = strlen(callout_info);
+	pc = callout_info;
+
+	do {
+		fd_set rfds, wfds;
+
+		FD_ZERO(&rfds);
+		FD_ZERO(&wfds);
+
+		if (TOSTDIN != -1) {
+			if (npay > 0) {
+				FD_SET(TOSTDIN, &wfds);
+			}
+			else {
+				close(TOSTDIN);
+				TOSTDIN = -1;
+
+				if (FROMSTDOUT == -1)
+					break;
+			}
+		}
+
+		if (FROMSTDOUT)
+			FD_SET(FROMSTDOUT, &rfds);
+
+		tmp = TOSTDIN > FROMSTDOUT ? TOSTDIN : FROMSTDOUT;
+		tmp++;
+
+		tmp = select(tmp, &rfds, &wfds, NULL, NULL);
+		if (tmp < 0)
+			error("select failed: %m");
+
+		if (FD_ISSET(TOSTDIN, &wfds)) {
+			tmp = write(TOSTDIN, pc, ninfo);
+			if (tmp < 0)
+				error("write failed: %m");
+			pc += tmp;
+			ninfo -= tmp;
+		}
+
+		if (FD_ISSET(FROMSTDOUT, &rfds)) {
+			tmp = read(FROMSTDOUT, pp, npay);
+			if (tmp < 0)
+				error("read failed: %m");
+
+			if (tmp == 0) {
+				close(FROMSTDOUT);
+				close(TOSTDIN);
+				FROMSTDOUT = -1;
+				TOSTDIN = -1;
+			}
+			else {
+				pp += tmp;
+				npay -= tmp;
+
+				if (npay == 0)
+					error("Too much data read from query program");
+			}
+		}
+
+	} while (TOSTDIN != -1 && FROMSTDOUT != -1);
+
+	/* wait for the program to exit */
+	if (waitpid(childpid, &tmp, 0) != childpid)
+		error("wait for child failed: %m\n");
+
+	/* if the process exited non-zero or died on a signal, then we call back in to ourself to
+	 * decide on negation
+	 * - this is not exactly beautiful but the quickest way of having configurable negation
+	 *   settings
+	 */
+	if (WIFEXITED(tmp) && WEXITSTATUS(tmp) != 0) {
+		if (norecurse)
+			error("child exited %d\n", WEXITSTATUS(tmp));
+
+		norecurse = 1;
+		debug("child exited %d\n", WEXITSTATUS(tmp));
+		lookup_action(op, key, ktype, kdesc, "negate");
+	}
+
+	if (WIFSIGNALED(tmp)) {
+		if (norecurse)
+			error("child died on signal %d\n", WTERMSIG(tmp));
+
+		norecurse = 1;
+		debug("child died on signal %d\n", WTERMSIG(tmp));
+		lookup_action(op, key, ktype, kdesc, "negate");
+	}
+
+	/* attempt to instantiate the key */
+	if (tmp < keyctl_instantiate(key, payload, pp - payload, 0))
+		error("instantiate key failed: %m\n");
+
+	exit(0);
+
+} /* end pipe_to_program() */

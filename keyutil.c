@@ -155,6 +155,16 @@ long keyctl_set_reqkey_keyring(int reqkey_defl)
 	return keyctl(KEYCTL_SET_REQKEY_KEYRING, reqkey_defl);
 }
 
+long keyctl_set_timeout(key_serial_t id, unsigned timeout)
+{
+	return keyctl(KEYCTL_SET_TIMEOUT, id, timeout);
+}
+
+long keyctl_assume_authority(key_serial_t id)
+{
+	return keyctl(KEYCTL_ASSUME_AUTHORITY, id);
+}
+
 /*****************************************************************************/
 /*
  * fetch key description into an allocated buffer

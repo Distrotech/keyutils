@@ -23,6 +23,7 @@ typedef int32_t key_serial_t;
 #define KEY_SPEC_USER_KEYRING		-4	/* - key ID for UID-specific keyring */
 #define KEY_SPEC_USER_SESSION_KEYRING	-5	/* - key ID for UID-session keyring */
 #define KEY_SPEC_GROUP_KEYRING		-6	/* - key ID for GID-specific keyring */
+#define KEY_SPEC_REQKEY_AUTH_KEY	-7	/* - key ID for assumed request_key auth key */
 
 /* request-key default keyrings */
 #define KEY_REQKEY_DEFL_NO_CHANGE		-1
@@ -36,26 +37,38 @@ typedef int32_t key_serial_t;
 
 /* key handle permissions mask */
 typedef uint32_t key_perm_t;
-#define KEY_USR_VIEW	0x00010000	/* user can view a key's attributes */
-#define KEY_USR_READ	0x00020000	/* user can read key payload / view keyring */
-#define KEY_USR_WRITE	0x00040000	/* user can update key payload / add link to keyring */
-#define KEY_USR_SEARCH	0x00080000	/* user can find a key in search / search a keyring */
-#define KEY_USR_LINK	0x00100000	/* user can create a link to a key/keyring */
-#define KEY_USR_ALL	0x001f0000
+
+#define KEY_POS_VIEW	0x01000000	/* possessor can view a key's attributes */
+#define KEY_POS_READ	0x02000000	/* possessor can read key payload / view keyring */
+#define KEY_POS_WRITE	0x04000000	/* possessor can update key payload / add link to keyring */
+#define KEY_POS_SEARCH	0x08000000	/* possessor can find a key in search / search a keyring */
+#define KEY_POS_LINK	0x10000000	/* possessor can create a link to a key/keyring */
+#define KEY_POS_SETATTR	0x20000000	/* possessor can set key attributes */
+#define KEY_POS_ALL	0x3f000000
+
+#define KEY_USR_VIEW	0x00010000	/* user permissions... */
+#define KEY_USR_READ	0x00020000
+#define KEY_USR_WRITE	0x00040000
+#define KEY_USR_SEARCH	0x00080000
+#define KEY_USR_LINK	0x00100000
+#define KEY_USR_SETATTR	0x00200000
+#define KEY_USR_ALL	0x003f0000
 
 #define KEY_GRP_VIEW	0x00000100	/* group permissions... */
 #define KEY_GRP_READ	0x00000200
 #define KEY_GRP_WRITE	0x00000400
 #define KEY_GRP_SEARCH	0x00000800
 #define KEY_GRP_LINK	0x00001000
-#define KEY_GRP_ALL	0x00001f00
+#define KEY_GRP_SETATTR	0x00002000
+#define KEY_GRP_ALL	0x00003f00
 
 #define KEY_OTH_VIEW	0x00000001	/* third party permissions... */
 #define KEY_OTH_READ	0x00000002
 #define KEY_OTH_WRITE	0x00000004
 #define KEY_OTH_SEARCH	0x00000008
 #define KEY_OTH_LINK	0x00000010
-#define KEY_OTH_ALL	0x0000001f
+#define KEY_OTH_SETATTR	0x00000010
+#define KEY_OTH_ALL	0x0000003f
 
 /* keyctl commands */
 #define KEYCTL_GET_KEYRING_ID		0	/* ask for a keyring's ID */
@@ -73,6 +86,8 @@ typedef uint32_t key_perm_t;
 #define KEYCTL_INSTANTIATE		12	/* instantiate a partially constructed key */
 #define KEYCTL_NEGATE			13	/* negate a partially constructed key */
 #define KEYCTL_SET_REQKEY_KEYRING	14	/* set default request-key keyring */
+#define KEYCTL_SET_TIMEOUT		15	/* set timeout on a key */
+#define KEYCTL_ASSUME_AUTHORITY		16	/* assume authority to instantiate key */
 
 /*
  * syscall wrappers
@@ -114,6 +129,8 @@ extern long keyctl_instantiate(key_serial_t id,
 			       key_serial_t ringid);
 extern long keyctl_negate(key_serial_t id, unsigned timeout, key_serial_t ringid);
 extern long keyctl_set_reqkey_keyring(int reqkey_defl);
+extern long keyctl_set_timeout(key_serial_t key, unsigned timeout);
+extern long keyctl_assume_authority(key_serial_t key);
 
 /*
  * utilities

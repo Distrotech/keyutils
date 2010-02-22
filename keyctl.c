@@ -50,6 +50,7 @@ static int act_keyctl_setperm(int argc, char *argv[]);
 static int act_keyctl_session(int argc, char *argv[]);
 static int act_keyctl_instantiate(int argc, char *argv[]);
 static int act_keyctl_negate(int argc, char *argv[]);
+static int act_keyctl_timeout(int argc, char *argv[]);
 
 const struct command commands[] = {
 	{ act_keyctl_show,	"show",		"" },
@@ -78,6 +79,7 @@ const struct command commands[] = {
 	{ act_keyctl_session,	"session",	"<name> [<prog> <arg1> <arg2> ...]" },
 	{ act_keyctl_instantiate, "instantiate","<key> <data> <keyring>" },
 	{ act_keyctl_negate,	"negate",	"<key> <timeout> <keyring>" },
+	{ act_keyctl_timeout,	"timeout",	"<key> <timeout>" },
 	{ NULL, NULL, NULL }
 };
 
@@ -155,6 +157,7 @@ static void format(void)
 	fprintf(stderr, "  @u      user keyring\n");
 	fprintf(stderr, "  @us     user default session keyring\n");
 	fprintf(stderr, "  @g      group keyring\n");
+	fprintf(stderr, "  @a      assumed request_key authorisation key\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "<type> can be \"user\" for a user-defined keyring\n");
 	fprintf(stderr, "If you do this, prefix the description with \"<subtype>:\"\n");
@@ -952,6 +955,34 @@ static int act_keyctl_negate(int argc, char *argv[])
 
 /*****************************************************************************/
 /*
+ * set a key's timeout
+ */
+static int act_keyctl_timeout(int argc, char *argv[])
+{
+	unsigned long timeout;
+	key_serial_t key;
+	char *q;
+
+	if (argc != 3)
+		format();
+
+	key = get_key_id(argv[1]);
+
+	timeout = strtoul(argv[2], &q, 10);
+	if (*q) {
+		fprintf(stderr, "Unparsable timeout: '%s'\n", argv[2]);
+		exit(2);
+	}
+
+	if (keyctl_set_timeout(key, timeout) < 0)
+		error("keyctl_set_timeout");
+
+	return 0;
+
+} /* end act_keyctl_timeout() */
+
+/*****************************************************************************/
+/*
  * parse a key identifier
  */
 static key_serial_t get_key_id(const char *arg)
@@ -967,6 +998,7 @@ static key_serial_t get_key_id(const char *arg)
 		if (strcmp(arg, "@u" ) == 0) return KEY_SPEC_USER_KEYRING;
 		if (strcmp(arg, "@us") == 0) return KEY_SPEC_USER_SESSION_KEYRING;
 		if (strcmp(arg, "@g" ) == 0) return KEY_SPEC_GROUP_KEYRING;
+		if (strcmp(arg, "@a" ) == 0) return KEY_SPEC_REQKEY_AUTH_KEY;
 
 		fprintf(stderr, "Unknown special key: '%s'\n", arg);
 		exit(2);

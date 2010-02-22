@@ -7,7 +7,7 @@
 .\" as published by the Free Software Foundation; either version
 .\" 2 of the License, or (at your option) any later version.
 .\"
-.TH KEYCTL 1 "11 July 2005" Linux "Linux Key Management Utilities"
+.TH KEYCTL 1 "17 Nov 2005" Linux "Linux Key Management Utilities"
 .SH NAME
 keyctl - Key management facility control
 .SH SYNOPSIS
@@ -62,6 +62,8 @@ keyctl - Key management facility control
 \fBkeyctl\fR instantiate <key> <data> <keyring>
 .br
 \fBkeyctl\fR negate <key> <timeout> <keyring>
+.br
+\fBkeyctl\fR timeout <key> <timeout>
 .SH DESCRIPTION
 This program is used to control the key management facility in various ways
 using a variety of subcommands.
@@ -106,6 +108,11 @@ set.
 .P
 This is a place holder for a group specific keyring, but is not actually
 implemented yet in the kernel.
+.P
+(*) Assumed request_key authorisation key: \fB@a\fR or \fB-7\fR
+.P
+This selects the authorisation key provided to the request_key() helper to
+permit it to access the callers keyrings and instantiate the target key.
 .SH COMMAND SYNTAX
 Any non-ambiguous shortening of a command name may be used in lieu of the full
 command name. This facility should not be used in scripting as new commands may
@@ -269,7 +276,7 @@ testbox>keyctl search @us user debug:hello
 .br
 23
 .br
-pseries>keyctl search @us user debug:bye
+testbox>keyctl search @us user debug:bye
 .br
 keyctl_search: Requested key not available
 .RE
@@ -290,7 +297,7 @@ If the key type does not support reading of the payload, then error "Operation
 not supported" will be returned.
 .P
 .RS
-textbox>keyctl read 26
+testbox>keyctl read 26
 .br
 1 bytes of data in key:
 .br
@@ -344,7 +351,7 @@ raw data returned from the kernel.
 testbox>keyctl describe @us
        -5: vrwsl----------  4043    -1 keyring: _uid_ses.4043
 testbox>keyctl rdescribe @us
-keyring;4043;-1;1f0000;_uid_ses.4043
+keyring;4043;-1;3f1f0000;_uid_ses.4043
 .RE
 .P
 The raw string is "<type>;<uid>;<gid>;<perms>;<description>", where \fIuid\fR
@@ -386,21 +393,23 @@ or a decimal number otherwise.
 The hex numbers are a combination of:
 .P
 .RS
-UID     GID     Other   Permission Granted
+Possessor UID       GID       Other     Permission Granted
 .br
-======  ======  ======  ==================
+========  ========  ========  ========  ==================
 .br
-010000  000100  000001  View
+01000000  00010000  00000100  00000001  View
 .br
-020000  000200  000002  Read
+02000000  00020000  00000200  00000002  Read
 .br
-040000  000400  000004  Write
+04000000  00040000  00000400  00000004  Write
 .br
-080000  000800  000008  Search
+08000000  00080000  00000800  00000008  Search
 .br
-100000  001000  000010  Link
+10000000  00100000  00001000  00000010  Link
 .br
-1f0000  001f00  1f0000  All
+20000000  00200000  00002000  00000020  Set Attribute
+.br
+3f000000  003f0000  00003f00  0000003f  All
 .RE
 .P
 \fIView\fR permits the type, description and other parameters of a key to be
@@ -416,8 +425,11 @@ linked is searched.
 .P
 \fILink\fR permits a key to be linked to a keyring.
 .P
+\fISet Attribute\fR permits a key to have its owner, group membership,
+permissions mask and timeout changed.
+.P
 .RS
-testbox>keyctl setperm 27 0x1f1f00
+testbox>keyctl setperm 27 0x1f1f1f00
 .RE
 .P
 (*) \fBStart a new session with fresh keyrings\fR
@@ -445,7 +457,7 @@ $SHELL if one isn't supplied.
 .RS
 testbox>keyctl rdescribe @s
 .br
-keyring;4043;-1;1f0000;_uid_ses.4043
+keyring;4043;-1;3f1f0000;_uid_ses.4043
 .P
 testbox>keyctl session
 .br
@@ -453,7 +465,7 @@ Joined session keyring: 28
 .br
 testbox>keyctl rdescribe @s
 .br
-keyring;4043;4043;1f0000;_ses.24082
+keyring;4043;4043;3f1f0000;_ses.24082
 .P
 testbox>keyctl session -
 .br
@@ -461,13 +473,13 @@ Joined session keyring: 29
 .br
 testbox>keyctl rdescribe @s
 .br
-keyring;4043;4043;1f0000;_ses.24139
+keyring;4043;4043;3f1f0000;_ses.24139
 .P
 testbox>keyctl session - keyctl rdescribe @s
 .br
 Joined session keyring: 30
 .br
-keyring;4043;4043;1f0000;_ses.24185
+keyring;4043;4043;3f1f0000;_ses.24185
 .P
 testbox>keyctl session fish 
 .br
@@ -475,13 +487,13 @@ Joined session keyring: 34
 .br
 testbox>keyctl rdescribe @s
 .br
-keyring;4043;4043;1f0000;fish
+keyring;4043;4043;3f1f0000;fish
 .P
 testbox>keyctl session fish keyctl rdesc @s
 .br
 Joined session keyring: 35
 .br
-keyring;4043;4043;1f0000;fish
+keyring;4043;4043;3f1f0000;fish
 .RE
 .P
 (*) \fBInstantiate a key\fR
@@ -506,11 +518,22 @@ session keyring. This special key is revoked once the key to which it refers
 has been instantiated one way or another.
 .P
 .RS
-keyctl instantiate $1 "Debug $3" $4
+testbox>keyctl instantiate $1 "Debug $3" $4
 .br
-keyctl negate $1 30 $4
+testbox>keyctl negate $1 30 $4
 .RE
-
+.P
+(*) \fBSet the expiry time on a key\fR
+.P
+\fBkeyctl timeout\fR <key> <timeout>
+.P
+This command is used to set the timeout on a key, or clear an existing timeout
+if the value specified is zero. The timeout is given as a number of seconds
+into the future.
+.P
+.RS
+testbox>keyctl timeout $1 45
+.RW
 .SH ERRORS
 .P
 There are a number of common errors returned by this program:
