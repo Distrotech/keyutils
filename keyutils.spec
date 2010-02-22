@@ -1,19 +1,20 @@
 %define vermajor 1
-%define version %{vermajor}.0
-%define _exec_prefix /
+%define version %{vermajor}.1
+%define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
 
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 2
+Release: 3%{?dist}
 License: GPL/LGPL
 Group: System Environment/Base
 ExclusiveOS: Linux
+Url: http://people.redhat.com/~dhowells/keyutils/
 
 Source0: http://people.redhat.com/~dhowells/keyutils/keyutils-%{version}.tar.bz2
 
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: glibc-kernheaders >= 2.4-9.1.92
 
 %description
@@ -29,11 +30,12 @@ Group: System Environment/Base
 This package provides a wrapper library for the key management facility system
 calls.
 
-%package devel
+%package libs-devel
 Summary: Development package for building linux key management utilities
 Group: System Environment/Base
+Requires: keyutils-libs == %{version}-%{release}
 
-%description devel
+%description libs-devel
 This package provides headers and libraries for building key utilities.
 
 %prep
@@ -41,7 +43,8 @@ This package provides headers and libraries for building key utilities.
 
 %build
 make \
-	LIBDIR=%{_libdir} \
+	NO_ARLIB=1 \
+	LIBDIR=%{libdir} \
 	USRLIBDIR=%{usrlibdir} \
 	RELEASE=.%{release} \
 	NO_GLIBC_KEYERR=1 \
@@ -49,7 +52,12 @@ make \
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make DESTDIR=$RPM_BUILD_ROOT LIBDIR=%{_libdir} USRLIBDIR=%{usrlibdir} RELEASE=.%{release} install
+make \
+	NO_ARLIB=1 \
+	DESTDIR=$RPM_BUILD_ROOT \
+	LIBDIR=%{libdir} \
+	USRLIBDIR=%{usrlibdir} \
+	install
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -59,23 +67,36 @@ rm -rf $RPM_BUILD_ROOT
 %doc README LICENCE.GPL
 /sbin/*
 /bin/*
-/usr/share/keyutils/*
-%{_mandir}/*
+/usr/share/keyutils
+%{_mandir}/man1/*
+%{_mandir}/man5/*
+%{_mandir}/man8/*
 %config(noreplace) /etc/*
 
 %files libs
 %defattr(-,root,root,-)
 %doc LICENCE.LGPL
-%{_libdir}/libkeyutils-%{version}.%{release}.so
-%{_libdir}/libkeyutils.so.%{vermajor}
+%{libdir}/libkeyutils-%{version}.so
+%{libdir}/libkeyutils.so.%{vermajor}
 
-%files devel
+%files libs-devel
 %defattr(-,root,root,-)
-%{usrlibdir}/libkeyutils.a
 %{usrlibdir}/libkeyutils.so
 %{_includedir}/*
+%{_mandir}/man2/*
+%{_mandir}/man3/*
 
 %changelog
+* Fri May 5 2006 David Howells <dhowells@redhat.com> - 1.1-3
+- Don't include the release number in the shared library filename
+- Don't build static library
+
+* Fri May 5 2006 David Howells <dhowells@redhat.com> - 1.1-2
+- More bug fixes from Fedora reviewer.
+
+* Thu May 4 2006 David Howells <dhowells@redhat.com> - 1.1-1
+- Fix rpmlint errors
+
 * Mon Dec 5 2005 David Howells <dhowells@redhat.com> - 1.0-2
 - Add build dependency on glibc-kernheaders with key management syscall numbers
 
