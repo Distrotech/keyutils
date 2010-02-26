@@ -709,11 +709,6 @@ static void pipe_to_program(char *op,
 		if (tmp < 0)
 			error("select failed: %m\n");
 
-		debug("select -> %d r=%x w=%x\n",
-		      tmp,
-		      *(unsigned *) (void *) &rfds,
-		      *(unsigned *) (void *) &wfds);
-
 		if (TOSTDIN != -1 && FD_ISSET(TOSTDIN, &wfds)) {
 			tmp = write(TOSTDIN, pc, ninfo);
 			if (tmp < 0) {

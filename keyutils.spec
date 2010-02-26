@@ -89,6 +89,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Fri Feb 26 2010 David Howells <dhowells@redhat.com>
+- Fix compiler warnings in request-key.
+
 * Tue Aug 22 2006 David Howells <dhowells@redhat.com> - 1.2-1
 - Remove syscall manual pages (section 2) to man-pages package [BZ 203582]
 - Don't write to serial port in debugging script
