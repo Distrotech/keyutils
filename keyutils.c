@@ -170,6 +170,11 @@ long keyctl_get_security(key_serial_t id, char *buffer, size_t buflen)
 	return keyctl(KEYCTL_GET_SECURITY, id, buffer, buflen);
 }
 
+long keyctl_session_to_parent(void)
+{
+	return keyctl(KEYCTL_SESSION_TO_PARENT);
+}
+
 /*****************************************************************************/
 /*
  * fetch key description into an allocated buffer

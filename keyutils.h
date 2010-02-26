@@ -90,6 +90,7 @@ typedef uint32_t key_perm_t;
 #define KEYCTL_SET_TIMEOUT		15	/* set timeout on a key */
 #define KEYCTL_ASSUME_AUTHORITY		16	/* assume authority to instantiate key */
 #define KEYCTL_GET_SECURITY		17	/* get key security label */
+#define KEYCTL_SESSION_TO_PARENT	18	/* set my session keyring on my parent process */
 
 /*
  * syscall wrappers
@@ -134,6 +135,7 @@ extern long keyctl_set_reqkey_keyring(int reqkey_defl);
 extern long keyctl_set_timeout(key_serial_t key, unsigned timeout);
 extern long keyctl_assume_authority(key_serial_t key);
 extern long keyctl_get_security(key_serial_t key, char *buffer, size_t buflen);
+extern long keyctl_session_to_parent(void);
 
 /*
  * utilities

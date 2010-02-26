@@ -595,6 +595,41 @@ testbox>keyctl security @s
 .br
 unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
 .RE
+.P
+(*) \fBGive the parent process a new session keyring\fR
+.P
+\fBkeyctl new_session\fR
+.P
+This command is used to give the invoking process (typically a shell) a new
+session keyring, discarding its old session keyring.
+.P
+.RS
+testbox> keyctl session foo
+.br
+Joined session keyring: 723488146
+.br
+testbox> keyctl show
+.br
+Session Keyring
+.br
+       -3 --alswrv      0     0  keyring: foo
+.br
+testbox> keyctl new_session
+.br
+490511412
+.br
+testbox> keyctl show
+.br
+Session Keyring
+.br
+       -3 --alswrv      0     0  keyring: _ses
+.RE
+.P
+Note that this affects the \fIparent\fP of the process that invokes the system
+call, and so may only affect processes with matching credentials.
+Furthermore, the change does not take effect till the parent process next
+transitions from kernel space to user space - typically when the \fBwait\fP()
+system call returns.
 .SH ERRORS
 .P
 There are a number of common errors returned by this program:

@@ -56,6 +56,7 @@ static int act_keyctl_pinstantiate(int argc, char *argv[]);
 static int act_keyctl_negate(int argc, char *argv[]);
 static int act_keyctl_timeout(int argc, char *argv[]);
 static int act_keyctl_security(int argc, char *argv[]);
+static int act_keyctl_new_session(int argc, char *argv[]);
 
 const struct command commands[] = {
 	{ act_keyctl_show,	"show",		"" },
@@ -90,6 +91,7 @@ const struct command commands[] = {
 	{ act_keyctl_negate,	"negate",	"<key> <timeout> <keyring>" },
 	{ act_keyctl_timeout,	"timeout",	"<key> <timeout>" },
 	{ act_keyctl_security,	"security",	"<key>" },
+	{ act_keyctl_new_session, "new_session",	"" },
 	{ NULL, NULL, NULL }
 };
 
@@ -1197,6 +1199,32 @@ static int act_keyctl_security(int argc, char *argv[])
 		error("keyctl_getsecurity");
 
 	printf("%s\n", buffer);
+	return 0;
+}
+
+/*****************************************************************************/
+/*
+ * install a new session keyring on the parent process
+ */
+static int act_keyctl_new_session(int argc, char *argv[])
+{
+	key_serial_t keyring;
+
+	if (argc != 1)
+		format();
+
+	if (keyctl_join_session_keyring(NULL) < 0)
+		error("keyctl_join_session_keyring");
+
+	if (keyctl_session_to_parent() < 0)
+		error("keyctl_session_to_parent");
+
+	keyring = keyctl_get_keyring_ID(KEY_SPEC_SESSION_KEYRING, 0);
+	if (keyring < 0)
+		error("keyctl_get_keyring_ID");
+
+	/* print the resulting key ID */
+	printf("%d\n", keyring);
 	return 0;
 }
 

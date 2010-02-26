@@ -92,6 +92,7 @@ rm -rf $RPM_BUILD_ROOT
 * Fri Feb 26 2010 David Howells <dhowells@redhat.com>
 - Fix compiler warnings in request-key.
 - Expose the kernel function to get a key's security context.
+- Expose the kernel function to set a processes keyring onto its parent.
 
 * Tue Aug 22 2006 David Howells <dhowells@redhat.com> - 1.2-1
 - Remove syscall manual pages (section 2) to man-pages package [BZ 203582]
