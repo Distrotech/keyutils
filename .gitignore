@@ -1,0 +1,8 @@
+*~
+*.o
+*.os
+*.so
+*.a
+*.so.*
+keyctl
+request-key
