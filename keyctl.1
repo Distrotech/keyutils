@@ -72,6 +72,8 @@ keyctl - Key management facility control
 \fBkeyctl\fR negate <key> <timeout> <keyring>
 .br
 \fBkeyctl\fR timeout <key> <timeout>
+.br
+\fBkeyctl\fR security <key>
 .SH DESCRIPTION
 This program is used to control the key management facility in various ways
 using a variety of subcommands.
@@ -579,7 +581,20 @@ into the future.
 .P
 .RS
 testbox>keyctl timeout $1 45
-.RW
+.RE
+.P
+(*) \fBRetrieve a key's security context\fR
+.P
+\fBkeyctl security\fR <key>
+.P
+This command is used to retrieve a key's LSM security context.  The label is
+printed on stdout.
+.P
+.RS
+testbox>keyctl security @s
+.br
+unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+.RE
 .SH ERRORS
 .P
 There are a number of common errors returned by this program:

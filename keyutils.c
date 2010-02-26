@@ -165,6 +165,11 @@ long keyctl_assume_authority(key_serial_t id)
 	return keyctl(KEYCTL_ASSUME_AUTHORITY, id);
 }
 
+long keyctl_get_security(key_serial_t id, char *buffer, size_t buflen)
+{
+	return keyctl(KEYCTL_GET_SECURITY, id, buffer, buflen);
+}
+
 /*****************************************************************************/
 /*
  * fetch key description into an allocated buffer
@@ -243,6 +248,44 @@ int keyctl_read_alloc(key_serial_t id, void **_buffer)
 	return buflen;
 
 } /* end keyctl_read_alloc() */
+
+/*****************************************************************************/
+/*
+ * fetch key security label into an allocated buffer
+ * - resulting string is NUL terminated
+ * - returns count not including NUL
+ */
+int keyctl_get_security_alloc(key_serial_t id, char **_buffer)
+{
+	char *buf;
+	long buflen, ret;
+
+	ret = keyctl_get_security(id, NULL, 0);
+	if (ret < 0)
+		return -1;
+
+	buflen = ret;
+	buf = malloc(buflen);
+	if (!buf)
+		return -1;
+
+	for (;;) {
+		ret = keyctl_get_security(id, buf, buflen);
+		if (ret < 0)
+			return -1;
+
+		if (buflen >= ret)
+			break;
+
+		buflen = ret;
+		buf = realloc(buf, buflen);
+		if (!buf)
+			return -1;
+	}
+
+	*_buffer = buf;
+	return buflen - 1;
+}
 
 #ifdef NO_GLIBC_KEYERR
 /*****************************************************************************/

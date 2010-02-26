@@ -89,6 +89,7 @@ typedef uint32_t key_perm_t;
 #define KEYCTL_SET_REQKEY_KEYRING	14	/* set default request-key keyring */
 #define KEYCTL_SET_TIMEOUT		15	/* set timeout on a key */
 #define KEYCTL_ASSUME_AUTHORITY		16	/* assume authority to instantiate key */
+#define KEYCTL_GET_SECURITY		17	/* get key security label */
 
 /*
  * syscall wrappers
@@ -132,12 +133,14 @@ extern long keyctl_negate(key_serial_t id, unsigned timeout, key_serial_t ringid
 extern long keyctl_set_reqkey_keyring(int reqkey_defl);
 extern long keyctl_set_timeout(key_serial_t key, unsigned timeout);
 extern long keyctl_assume_authority(key_serial_t key);
+extern long keyctl_get_security(key_serial_t key, char *buffer, size_t buflen);
 
 /*
  * utilities
  */
 extern int keyctl_describe_alloc(key_serial_t id, char **_buffer);
 extern int keyctl_read_alloc(key_serial_t id, void **_buffer);
+extern int keyctl_get_security_alloc(key_serial_t id, char **_buffer);
 
 
 #endif /* KEYUTILS_H */

@@ -55,6 +55,7 @@ static int act_keyctl_instantiate(int argc, char *argv[]);
 static int act_keyctl_pinstantiate(int argc, char *argv[]);
 static int act_keyctl_negate(int argc, char *argv[]);
 static int act_keyctl_timeout(int argc, char *argv[]);
+static int act_keyctl_security(int argc, char *argv[]);
 
 const struct command commands[] = {
 	{ act_keyctl_show,	"show",		"" },
@@ -88,6 +89,7 @@ const struct command commands[] = {
 	{ act_keyctl_pinstantiate, "pinstantiate","<key> <keyring>" },
 	{ act_keyctl_negate,	"negate",	"<key> <timeout> <keyring>" },
 	{ act_keyctl_timeout,	"timeout",	"<key> <timeout>" },
+	{ act_keyctl_security,	"security",	"<key>" },
 	{ NULL, NULL, NULL }
 };
 
@@ -1173,6 +1175,30 @@ static int act_keyctl_timeout(int argc, char *argv[])
 	return 0;
 
 } /* end act_keyctl_timeout() */
+
+/*****************************************************************************/
+/*
+ * get a key's security label
+ */
+static int act_keyctl_security(int argc, char *argv[])
+{
+	key_serial_t key;
+	char *buffer;
+	int ret;
+
+	if (argc != 2)
+		format();
+
+	key = get_key_id(argv[1]);
+
+	/* get key description */
+	ret = keyctl_get_security_alloc(key, &buffer);
+	if (ret < 0)
+		error("keyctl_getsecurity");
+
+	printf("%s\n", buffer);
+	return 0;
+}
 
 /*****************************************************************************/
 /*
