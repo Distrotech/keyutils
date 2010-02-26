@@ -32,3 +32,11 @@ KEYUTILS_1.0 {
 	keyctl_set_timeout;
 
 } KEYUTILS_0.3;
+
+KEYUTILS_1.3 {
+	/* management functions */
+	keyctl_get_security;
+	keyctl_get_security_alloc;
+	keyctl_session_to_parent;
+
+} KEYUTILS_1.0;
