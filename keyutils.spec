@@ -6,8 +6,8 @@
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 1%{?dist}
-License: GPL/LGPL
+Release: 2%{?dist}
+License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux
 Url: http://people.redhat.com/~dhowells/keyutils/
@@ -19,7 +19,7 @@ BuildRequires: glibc-kernheaders >= 2.4-9.1.92
 
 %description
 Utilities to control the kernel key management facility and to provide
-a mechanism by which the kernel call back to userspace to get a key
+a mechanism by which the kernel call back to user space to get a key
 instantiated.
 
 %package libs
@@ -31,7 +31,7 @@ This package provides a wrapper library for the key management facility system
 calls.
 
 %package libs-devel
-Summary: Development package for building linux key management utilities
+Summary: Development package for building Linux key management utilities
 Group: System Environment/Base
 Requires: keyutils-libs == %{version}-%{release}
 
@@ -89,6 +89,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Thu Mar 11 2010 David Howells  <dhowells@redhat.com> - 1.3-2
+- Fix rpmlint warnings.
+
 * Fri Feb 26 2010 David Howells <dhowells@redhat.com> - 1.3-1
 - Fix compiler warnings in request-key.
 - Expose the kernel function to get a key's security context.
