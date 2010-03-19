@@ -1,5 +1,5 @@
 %define vermajor 1
-%define version %{vermajor}.3
+%define version %{vermajor}.4
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
 %define libapivermajor 1
@@ -8,7 +8,7 @@
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 4%{?dist}
+Release: 1%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux
@@ -91,8 +91,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
-* Fri Mar 19 2010 David Howells  <dhowells@redhat.com> - 1.3-4
+* Fri Mar 19 2010 David Howells  <dhowells@redhat.com> - 1.4-1
 - Fix the library naming wrt the version.
+- Move the package to version to 1.4.
 
 * Fri Mar 19 2010 David Howells  <dhowells@redhat.com> - 1.3-3
 - Fix spelling mistakes in manpages.
