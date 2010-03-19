@@ -6,7 +6,7 @@
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux
@@ -89,6 +89,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Fri Mar 19 2010 David Howells  <dhowells@redhat.com> - 1.3-3
+- Fix spelling mistakes in manpages.
+- Add an index manpage for all the keyctl functions.
+
 * Thu Mar 11 2010 David Howells  <dhowells@redhat.com> - 1.3-2
 - Fix rpmlint warnings.
 

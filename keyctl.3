@@ -1,0 +1,85 @@
+.\"
+.\" Copyright (C) 2010 Red Hat, Inc. All Rights Reserved.
+.\" Written by David Howells (dhowells@redhat.com)
+.\"
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public Licence
+.\" as published by the Free Software Foundation; either version
+.\" 2 of the Licence, or (at your option) any later version.
+.\"
+.TH KEYCTL 3 "18 Mar 2010" Linux "Linux Key Management Calls"
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH NAME
+keyctl_*() \- Key management function wrappers
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH DESCRIPTION
+The
+.BR keyctl ()
+system call is a multiplexor for a number of key management functions.  These
+should be called via the wrappers in the libkeyutils library.
+.P
+The functions can be compiled in by including the keyutils header file:
+.sp
+.RS
+.nf
+.B #include <keyutils.h>
+.RE
+.P
+and then telling the linker it should link in the library:
+.sp
+.RS
+.nf
+.B -lkeyutils
+.RE
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH KEYCTL FUNCTIONS
+.BR keyctl_assume_authority (3)
+.br
+.BR keyctl_clear (3)
+.br
+.BR keyctl_describe (3)
+.br
+.BR keyctl_describe_alloc (3)
+.br
+.BR keyctl_get_keyring_ID (3)
+.br
+.BR keyctl_instantiate (3)
+.br
+.BR keyctl_join_session_keyring (3)
+.br
+.BR keyctl_link (3)
+.br
+.BR keyctl_negate (3)
+.br
+.BR keyctl_read (3)
+.br
+.BR keyctl_read_alloc (3)
+.br
+.BR keyctl_revoke (3)
+.br
+.BR keyctl_search (3)
+.br
+.BR keyctl_security (3)
+.br
+.BR keyctl_security_alloc (3)
+.br
+.BR keyctl_set_reqkey_keyring (3)
+.br
+.BR keyctl_set_timeout (3)
+.br
+.BR keyctl_setperm (3)
+.br
+.BR keyctl_unlink (3)
+.br
+.BR keyctl_update (3)
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR keyctl (1),
+.br
+.BR add_key (2),
+.br
+.BR keyctl (2),
+.br
+.BR request_key (2),
+.br
+.BR request-key (8)
