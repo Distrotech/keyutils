@@ -18,7 +18,7 @@ INCLUDEDIR	:= /usr/include
 ARLIB		:= libkeyutils.a
 DEVELLIB	:= libkeyutils.so
 SONAME		:= libkeyutils.so.$(MAJOR)
-LIBNAME		:= libkeyutils-$(VERSION).so
+LIBNAME		:= libkeyutils.so.$(VERSION)
 
 LNS		:= ln -sf
 

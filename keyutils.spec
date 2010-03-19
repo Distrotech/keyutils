@@ -2,11 +2,13 @@
 %define version %{vermajor}.3
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
+%define libapivermajor 1
+%define libapiversion %{libapivermajor}.3
 
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux
@@ -79,8 +81,8 @@ rm -rf $RPM_BUILD_ROOT
 %files libs
 %defattr(-,root,root,-)
 %doc LICENCE.LGPL
-%{libdir}/libkeyutils-%{version}.so
-%{libdir}/libkeyutils.so.%{vermajor}
+%{libdir}/libkeyutils.so.%{libapiversion}
+%{libdir}/libkeyutils.so.%{libapivermajor}
 
 %files libs-devel
 %defattr(-,root,root,-)
@@ -89,6 +91,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Fri Mar 19 2010 David Howells  <dhowells@redhat.com> - 1.3-4
+- Fix the library naming wrt the version.
+
 * Fri Mar 19 2010 David Howells  <dhowells@redhat.com> - 1.3-3
 - Fix spelling mistakes in manpages.
 - Add an index manpage for all the keyctl functions.
