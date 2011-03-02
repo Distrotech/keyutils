@@ -75,10 +75,10 @@ keyutils.os: keyutils.c keyutils.h Makefile
 	$(CC) $(CFLAGS) -fPIC -o $@ -c $<
 
 
-keyctl: keyctl.c keyutils.h Makefile
+keyctl: keyctl.c keyutils.h Makefile -lkeyutils
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
-request-key: request-key.c keyutils.h Makefile
+request-key: request-key.c keyutils.h Makefile -lkeyutils
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
 
