@@ -45,6 +45,8 @@ USRLIBDIR	:= /usr/lib64
 endif
 endif
 
+RPATH = -Wl,-rpath,$(LIBDIR)
+
 ifeq ($(NO_ARLIB),0)
 all: $(ARLIB)
 $(ARLIB): keyutils.o
@@ -73,10 +75,10 @@ keyutils.os: keyutils.c keyutils.h Makefile
 
 
 keyctl: keyctl.c keyutils.h Makefile
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< -L. -lkeyutils -Wl,-rpath,$(LIB)
+	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
 request-key: request-key.c keyutils.h Makefile
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< -L. -lkeyutils -Wl,-rpath,$(LIB)
+	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
 
 MAN1	:= $(DESTDIR)/usr/share/man/man1
