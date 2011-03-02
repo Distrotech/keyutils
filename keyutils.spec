@@ -1,5 +1,6 @@
 %define vermajor 1
-%define version %{vermajor}.4
+%define verminor 4
+%define version %{vermajor}.%{verminor}
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
 %define libapivermajor 1

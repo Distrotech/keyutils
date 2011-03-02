@@ -1,9 +1,7 @@
 CFLAGS		:= -g -O2 -Wall
 INSTALL		:= install
 DESTDIR		:=
-MAJOR		:= 1
-MINOR		:= 3
-VERSION		:= $(MAJOR).$(MINOR)
+SPECFILE	:= keyutils.spec
 NO_GLIBC_KEYERR	:= 0
 NO_ARLIB	:= 0
 ETCDIR		:= /etc
@@ -15,23 +13,46 @@ MAN3		:= /usr/share/man/man3
 MAN5		:= /usr/share/man/man5
 MAN8		:= /usr/share/man/man8
 INCLUDEDIR	:= /usr/include
+LNS		:= ln -sf
+
+###############################################################################
+#
+# Determine the current package version from the specfile
+#
+###############################################################################
+vermajor	:= $(shell grep "%define vermajor" $(SPECFILE))
+verminor	:= $(shell grep "%define verminor" $(SPECFILE))
+MAJOR		:= $(word 3,$(vermajor))
+MINOR		:= $(word 3,$(verminor))
+VERSION		:= $(MAJOR).$(MINOR)
+
+###############################################################################
+#
+# Determine the current library version from the version script
+#
+###############################################################################
+libversion	:= $(filter KEYUTILS_%,$(shell grep ^KEYUTILS_ version.lds))
+libversion	:= $(lastword $(libversion))
+libversion	:= $(lastword $(libversion))
+APIVERSION	:= $(subst KEYUTILS_,,$(libversion))
+vernumbers	:= $(subst ., ,$(APIVERSION))
+APIMAJOR	:= $(firstword $(vernumbers))
+
 ARLIB		:= libkeyutils.a
 DEVELLIB	:= libkeyutils.so
-SONAME		:= libkeyutils.so.$(MAJOR)
-LIBNAME		:= libkeyutils.so.$(VERSION)
+SONAME		:= libkeyutils.so.$(APIMAJOR)
+LIBNAME		:= libkeyutils.so.$(APIVERSION)
 
+###############################################################################
+#
+# Guess at the appropriate lib directory and word size
+#
+###############################################################################
 LIBDIR		:= $(shell ldd /usr/bin/make | grep '\(/libc\)' | sed -e 's!.*\(/.*\)/libc[.].*!\1!')
 USRLIBDIR	:= $(patsubst /lib/%,/usr/lib/%,$(LIBDIR))
 BUILDFOR	:= $(shell file /usr/bin/make | sed -e 's!.*ELF \(32\|64\)-bit.*!\1!')-bit
 
 LNS		:= ln -sf
-
-ifeq ($(NO_GLIBC_KEYERR),1)
-CFLAGS	+= -DNO_GLIBC_KEYERR
-LIBLIBS	:= -ldl -lc
-else
-LIBLIBS	:=
-endif
 
 ifeq ($(BUILDFOR),32-bit)
 CFLAGS		+= -m32
@@ -45,6 +66,30 @@ USRLIBDIR	:= /usr/lib64
 endif
 endif
 
+###############################################################################
+#
+# This is necessary if glibc doesn't know about the key management error codes
+#
+###############################################################################
+ifeq ($(NO_GLIBC_KEYERR),1)
+CFLAGS	+= -DNO_GLIBC_KEYERR
+LIBLIBS	:= -ldl -lc
+else
+LIBLIBS	:=
+endif
+
+###############################################################################
+#
+# Normal build rule
+#
+###############################################################################
+all: $(DEVELLIB) keyctl request-key
+
+###############################################################################
+#
+# Build the libraries
+#
+###############################################################################
 RPATH = -Wl,-rpath,$(LIBDIR)
 
 ifeq ($(NO_ARLIB),0)
@@ -52,8 +97,6 @@ all: $(ARLIB)
 $(ARLIB): keyutils.o
 	$(AR) rcs $@ $<
 endif
-
-all: $(DEVELLIB) keyctl request-key
 
 keyutils.o: keyutils.c keyutils.h Makefile
 	$(CC) $(CFLAGS) -UNO_GLIBC_KEYERR -o $@ -c $<
@@ -73,14 +116,22 @@ $(LIBNAME): keyutils.os version.lds Makefile
 keyutils.os: keyutils.c keyutils.h Makefile
 	$(CC) $(CFLAGS) -fPIC -o $@ -c $<
 
-
+###############################################################################
+#
+# Build the programs
+#
+###############################################################################
 keyctl: keyctl.c keyutils.h Makefile -lkeyutils
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
 request-key: request-key.c keyutils.h Makefile -lkeyutils
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
-
+###############################################################################
+#
+# Install everything
+#
+###############################################################################
 install: all
 ifeq ($(NO_ARLIB),0)
 	$(INSTALL) -D -m 0644 $(ARLIB) $(DESTDIR)$(USRLIBDIR)/$(ARLIB)
@@ -119,13 +170,27 @@ endif
 	$(INSTALL) -D -m 0644 request-key.8 $(DESTDIR)$(MAN8)/request-key.8
 	$(INSTALL) -D -m 0644 keyutils.h $(DESTDIR)$(INCLUDEDIR)/keyutils.h
 
+###############################################################################
+#
+# Clean up
+#
+###############################################################################
 clean:
 	$(RM) libkeyutils*
 	$(RM) keyctl request-key
 	$(RM) *.o *.os *~
 	$(RM) debugfiles.list debugsources.list
 
+###############################################################################
+#
+# Build debugging
+#
+###############################################################################
 show_vars:
+	@echo VERSION=$(VERSION)
+	@echo APIVERSION=$(APIVERSION)
 	@echo LIBDIR=$(LIBDIR)
 	@echo USRLIBDIR=$(USRLIBDIR)
 	@echo BUILDFOR=$(BUILDFOR)
+	@echo SONAME=$(SONAME)
+	@echo LIBNAME=$(LIBNAME)
