@@ -102,6 +102,8 @@ endif
 	$(INSTALL) -D -m 0644 keyctl_describe.3 $(MAN3)/keyctl_describe.3
 	$(LNS) keyctl_describe.3 $(MAN3)/keyctl_describe_alloc.3
 	$(INSTALL) -D -m 0644 keyctl_get_keyring_ID.3 $(MAN3)/keyctl_get_keyring_ID.3
+	$(INSTALL) -D -m 0644 keyctl_get_security.3 $(MAN3)/keyctl_get_security.3
+	$(LNS) keyctl_get_security.3 $(MAN3)/keyctl_get_security_alloc.3
 	$(INSTALL) -D -m 0644 keyctl_instantiate.3 $(MAN3)/keyctl_instantiate.3
 	$(LNS) keyctl_instantiate.3 $(MAN3)/keyctl_negate.3
 	$(LNS) keyctl_instantiate.3 $(MAN3)/keyctl_assume_authority.3

@@ -20,7 +20,7 @@ keyctl_negate \- Negatively instantiate a key
 .sp
 .BI "long keyctl_assume_authority(key_serial_t " key ");"
 .sp
-.BI "long keyctl_instantiate(key_serial_t " key ", const char *" payload ,
+.BI "long keyctl_instantiate(key_serial_t " key ", const void *" payload ,
 .BI "size_t " plen ", key_serial_t " keyring ");"
 .sp
 .BI "long keyctl_negate(key_serial_t " key ", unsigned " timeout ,
