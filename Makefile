@@ -7,18 +7,19 @@ VERSION		:= $(MAJOR).$(MINOR)
 NO_GLIBC_KEYERR	:= 0
 NO_GLIBC_KEYSYS	:= 0
 NO_ARLIB	:= 0
-BUILDFOR	:= 
 ETCDIR		:= /etc
 BINDIR		:= /bin
 SBINDIR		:= /sbin
-LIBDIR		:= /lib
-USRLIBDIR	:= /usr/lib
 SHAREDIR	:= /usr/share/keyutils
 INCLUDEDIR	:= /usr/include
 ARLIB		:= libkeyutils.a
 DEVELLIB	:= libkeyutils.so
 SONAME		:= libkeyutils.so.$(MAJOR)
 LIBNAME		:= libkeyutils.so.$(VERSION)
+
+LIBDIR		:= $(shell ldd /usr/bin/make | grep '\(/libc\)' | sed -e 's!.*\(/.*\)/libc[.].*!\1!')
+USRLIBDIR	:= $(patsubst /lib/%,/usr/lib/%,$(LIBDIR))
+BUILDFOR	:= $(shell file /usr/bin/make | sed -e 's!.*ELF \(32\|64\)-bit.*!\1!')-bit
 
 LNS		:= ln -sf
 
@@ -129,3 +130,8 @@ clean:
 	$(RM) keyctl request-key
 	$(RM) *.o *.os *~
 	$(RM) debugfiles.list debugsources.list
+
+show_vars:
+	@echo LIBDIR=$(LIBDIR)
+	@echo USRLIBDIR=$(USRLIBDIR)
+	@echo BUILDFOR=$(BUILDFOR)
