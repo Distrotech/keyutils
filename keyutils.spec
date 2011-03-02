@@ -8,7 +8,7 @@
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux
@@ -91,6 +91,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Thu Jun 10 2010 David Howells  <dhowells@redhat.com> - 1.4-2
+- Fix prototypes in manual pages (some char* should be void*).
+- Rename the keyctl_security.3 manpage to keyctl_get_security.3.
+
 * Fri Mar 19 2010 David Howells  <dhowells@redhat.com> - 1.4-1
 - Fix the library naming wrt the version.
 - Move the package to version to 1.4.
