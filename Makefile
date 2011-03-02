@@ -5,7 +5,6 @@ MAJOR		:= 1
 MINOR		:= 3
 VERSION		:= $(MAJOR).$(MINOR)
 NO_GLIBC_KEYERR	:= 0
-NO_GLIBC_KEYSYS	:= 0
 NO_ARLIB	:= 0
 ETCDIR		:= /etc
 BINDIR		:= /bin
@@ -32,10 +31,6 @@ CFLAGS	+= -DNO_GLIBC_KEYERR
 LIBLIBS	:= -ldl -lc
 else
 LIBLIBS	:=
-endif
-
-ifeq ($(NO_GLIBC_KEYSYS),1)
-CFLAGS	+= -DNO_GLIBC_KEYSYS
 endif
 
 ifeq ($(BUILDFOR),32-bit)
