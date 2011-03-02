@@ -181,6 +181,37 @@ clean:
 	$(RM) *.o *.os *~
 	$(RM) debugfiles.list debugsources.list
 
+distclean: clean
+	$(RM) -r rpmbuild
+
+###############################################################################
+#
+# Generate a tarball
+#
+###############################################################################
+TARBALL	:= keyutils-$(VERSION).tar.bz2
+SRCBALL	:= rpmbuild/SOURCES/$(TARBALL)
+
+dist	:= $(word 2,$(shell grep "%dist" /etc/rpm/macros.dist))
+release	:= $(word 2,$(shell grep ^Release: $(SPECFILE)))
+release	:= $(subst %{?dist},$(dist),$(release))
+rpmver	:= $(VERSION)-$(release)
+SRPM	:= rpmbuild/SRPMS/keyutils-$(rpmver).src.rpm
+
+RPMBUILDDIRS := \
+		--define "_srcrpmdir $(PWD)/rpmbuild/SRPMS" \
+		--define "_rpmdir $(PWD)/rpmbuild/RPMS" \
+		--define "_sourcedir $(PWD)/rpmbuild/SOURCES" \
+		--define "_specdir $(PWD)/rpmbuild/SPECS" \
+		--define "_builddir $(PWD)/rpmbuild/BUILD" \
+		--define "_buildrootdir $(PWD)/rpmbuild/BUILDROOT"
+
+rpm:
+	mkdir -p rpmbuild/{SPECS,SOURCES,BUILD,BUILDROOT,RPMS,SRPMS}
+	git archive --prefix=keyutils-$(VERSION)/ --format tar -o $(SRCBALL) HEAD
+	rpmbuild -ts $(SRCBALL) --define "_srcrpmdir rpmbuild/SRPMS"
+	rpmbuild --rebuild $(SRPM) $(RPMBUILDDIRS)
+
 ###############################################################################
 #
 # Build debugging
