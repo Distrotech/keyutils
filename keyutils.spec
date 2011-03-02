@@ -9,7 +9,7 @@
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux
@@ -92,6 +92,15 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Tue Mar 1 2011 David Howells  <dhowells@redhat.com> - 1.4-4
+- Make build guess at default libdirs and word size.
+- Make program build depend on library in Makefile.
+- Don't include $(DESTDIR) in MAN* macros.
+- Remove NO_GLIBC_KEYSYS as it is obsolete.
+- Have Makefile extract version info from specfile and version script.
+- Provide RPM build rule in Makefile.
+- Provide distclean rule in Makefile.
+
 * Fri Dec 17 2010 Diego Elio Pettenò <flameeyes@hosting.flameeyes.eu> - 1.4-3
 - Fix local linking and RPATH.
 
