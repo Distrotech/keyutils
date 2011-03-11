@@ -153,5 +153,9 @@ extern int keyctl_describe_alloc(key_serial_t id, char **_buffer);
 extern int keyctl_read_alloc(key_serial_t id, void **_buffer);
 extern int keyctl_get_security_alloc(key_serial_t id, char **_buffer);
 
+typedef int (*recursive_key_scanner_t)(key_serial_t parent, key_serial_t key,
+				       char *desc, int desc_len, void *data);
+extern int recursive_key_scan(key_serial_t key, recursive_key_scanner_t func, void *data);
+extern int recursive_session_key_scan(recursive_key_scanner_t func, void *data);
 
 #endif /* KEYUTILS_H */

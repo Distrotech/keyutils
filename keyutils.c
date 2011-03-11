@@ -338,6 +338,91 @@ int keyctl_get_security_alloc(key_serial_t id, char **_buffer)
 	return buflen - 1;
 }
 
+/*
+ * Depth-first recursively apply a function over a keyring tree
+ */
+static int recursive_key_scan_aux(key_serial_t parent, key_serial_t key,
+				  int depth, recursive_key_scanner_t func,
+				  void *data)
+{
+	key_serial_t *pk;
+	key_perm_t perm;
+	size_t ringlen;
+	void *ring;
+	char *desc, type[255];
+	int desc_len, uid, gid, ret, n, kcount = 0, is_keyring = 0;
+
+	if (depth > 800)
+		return 0;
+
+	/* read the key description */
+	desc = NULL;
+	desc_len = keyctl_describe_alloc(key, &desc);
+	if (desc_len < 0)
+		goto do_this_key;
+
+	/* parse */
+	type[0] = 0;
+
+	n = sscanf(desc, "%[^;];%d;%d;%x;", type, &uid, &gid, &perm);
+	if (n != 4) {
+		free(desc);
+		desc = NULL;
+		errno = -EINVAL;
+		desc_len = -1;
+		goto do_this_key;
+	}
+
+	/* if it's a keyring then we're going to want to recursively search it
+	 * if we can */
+	if (strcmp(type, "keyring") == 0) {
+		is_keyring = 1;
+
+		/* read the keyring's contents */
+		ret = keyctl_read_alloc(key, &ring);
+		if (ret < 0)
+			goto do_this_key;
+
+		ringlen = ret;
+
+		/* walk the keyring */
+		pk = ring;
+		for (ringlen = ret;
+		     ringlen >= sizeof(key_serial_t);
+		     ringlen -= sizeof(key_serial_t)
+		     )
+			kcount += recursive_key_scan_aux(key, *pk++, depth + 1,
+							 func, data);
+
+		free(ring);
+	}
+
+do_this_key:
+	kcount += func(parent, key, desc, desc_len, data);
+	free(desc);
+	return kcount;
+}
+
+/*
+ * Depth-first apply a function over a keyring tree
+ */
+int recursive_key_scan(key_serial_t key, recursive_key_scanner_t func, void *data)
+{
+	return recursive_key_scan_aux(0, key, 0, func, data);
+}
+
+/*
+ * Depth-first apply a function over session keyring tree
+ */
+int recursive_session_key_scan(recursive_key_scanner_t func, void *data)
+{
+	key_serial_t session =
+		keyctl_get_keyring_ID(KEY_SPEC_SESSION_KEYRING, 0);
+	if (session > 0)
+		return recursive_key_scan(session, func, data);
+	return 0;
+}
+
 #ifdef NO_GLIBC_KEYERR
 /*****************************************************************************/
 /*

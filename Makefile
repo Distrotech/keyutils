@@ -176,6 +176,8 @@ endif
 	$(INSTALL) -D -m 0644 keyctl_set_reqkey_keyring.3 $(DESTDIR)$(MAN3)/keyctl_set_reqkey_keyring.3
 	$(INSTALL) -D -m 0644 keyctl_set_timeout.3 $(DESTDIR)$(MAN3)/keyctl_set_timeout.3
 	$(INSTALL) -D -m 0644 keyctl_update.3 $(DESTDIR)$(MAN3)/keyctl_update.3
+	$(INSTALL) -D -m 0644 recursive_key_scan.3 $(DESTDIR)$(MAN3)/recursive_key_scan.3
+	$(LNS) recursive_key_scan.3 $(DESTDIR)$(MAN3)/recursive_session_key_scan.3
 	$(INSTALL) -D -m 0644 request-key.conf.5 $(DESTDIR)$(MAN5)/request-key.conf.5
 	$(INSTALL) -D -m 0644 request-key.8 $(DESTDIR)$(MAN8)/request-key.8
 	$(INSTALL) -D -m 0644 key.dns_resolver.8 $(DESTDIR)$(MAN8)/key.dns_resolver.8
