@@ -16,6 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <dlfcn.h>
+#include <sys/uio.h>
 #include <errno.h>
 #include <asm/unistd.h>
 #include "keyutils.h"
@@ -192,7 +193,32 @@ long keyctl_instantiate_iov(key_serial_t id,
 			    unsigned ioc,
 			    key_serial_t ringid)
 {
-	return keyctl(KEYCTL_INSTANTIATE_IOV, id, payload_iov, ioc, ringid);
+	long ret = keyctl(KEYCTL_INSTANTIATE_IOV, id, payload_iov, ioc, ringid);
+
+	/* fall back to keyctl_instantiate() if this op is not supported by
+	 * this kernel version */
+	if (ret == -1 && errno == EOPNOTSUPP) {
+		unsigned loop;
+		size_t bsize = 0, seg;
+		void *buf, *p;
+
+		if (!payload_iov || !ioc)
+			return keyctl_instantiate(id, NULL, 0, ringid);
+		for (loop = 0; loop < ioc; loop++)
+			bsize += payload_iov[loop].iov_len;
+		if (bsize == 0)
+			return keyctl_instantiate(id, NULL, 0, ringid);
+		p = buf = malloc(bsize);
+		if (!buf)
+			return -1;
+		for (loop = 0; loop < ioc; loop++) {
+			seg = payload_iov[loop].iov_len;
+			p = memcpy(p, payload_iov[loop].iov_base, seg) + seg;
+		}
+		ret = keyctl_instantiate(id, buf, bsize, ringid);
+		free(buf);
+	}
+	return ret;
 }
 
 /*****************************************************************************/
