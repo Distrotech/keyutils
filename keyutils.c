@@ -178,7 +178,13 @@ long keyctl_session_to_parent(void)
 long keyctl_reject(key_serial_t id, unsigned timeout, unsigned error,
 		   key_serial_t ringid)
 {
-	return keyctl(KEYCTL_REJECT, id, timeout, error, ringid);
+	long ret = keyctl(KEYCTL_REJECT, id, timeout, error, ringid);
+
+	/* fall back to keyctl_negate() if this op is not supported by this
+	 * kernel version */
+	if (ret == -1 && errno == EOPNOTSUPP)
+		return keyctl_negate(id, timeout, ringid);
+	return ret;
 }
 
 long keyctl_instantiate_iov(key_serial_t id,
