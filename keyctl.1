@@ -288,18 +288,20 @@ testbox>keyctl link 27 27
 keyctl_link: Resource deadlock avoided
 .RE
 .P
-(*) \fBUnlink a key from a keyring\fR
+(*) \fBUnlink a key from a keyring or the session keyring tree\fR
 .P
-\fBkeyctl unlink\fR <key> <keyring>
+\fBkeyctl unlink\fR <key> [<keyring>]
 .P
-This command removes a link to the key from the keyring. Error "Not a
-directory" will be returned if the destination is not a keyring. Error
-"Permission denied" will be returned if the keyring doesn't have write
-permission. Error "No such file or directory" will be returned if the key is
-not linked to by the keyring.
+If the keyring is specified, this command removes a link to the key from the
+keyring. Error "Not a directory" will be returned if the destination is not a
+keyring. Error "Permission denied" will be returned if the keyring doesn't have
+write permission. Error "No such file or directory" will be returned if the key
+is not linked to by the keyring.
 .P
-Note that this only removes one key link from the keyring; any further links to
-the same key are not deleted.
+If the keyring is not specified, this command performs a depth-first search of
+the session keyring tree and removes all the links to the nominated key that it
+finds (and that it is permitted to remove).  It prints the number of successful
+unlinks before exiting.
 .P
 .RS
 testbox>keyctl unlink 23 27

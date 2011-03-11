@@ -73,7 +73,7 @@ const struct command commands[] = {
 	{ act_keyctl_revoke,	"revoke",	"<key>" },
 	{ act_keyctl_clear,	"clear",	"<keyring>" },
 	{ act_keyctl_link,	"link",		"<key> <keyring>" },
-	{ act_keyctl_unlink,	"unlink",	"<key> <keyring>" },
+	{ act_keyctl_unlink,	"unlink",	"<key> [<keyring>]" },
 	{ act_keyctl_search,	"search",	"<keyring> <type> <desc> [<dest_keyring>]" },
 	{ act_keyctl_read,	"read",		"<key>" },
 	{ act_keyctl_pipe,	"pipe",		"<key>" },
@@ -552,26 +552,43 @@ static int act_keyctl_link(int argc, char *argv[])
 
 } /* end act_keyctl_link() */
 
-/*****************************************************************************/
 /*
- * unlink a key from a keyrign
+ * Attempt to unlink a key matching the ID
+ */
+static int act_keyctl_unlink_func(key_serial_t parent, key_serial_t key,
+				  char *desc, int desc_len, void *data)
+{
+	key_serial_t *target = data;
+
+	if (key == *target)
+		return keyctl_unlink(key, parent) < 0 ? 0 : 1;
+	return 0;
+}
+
+/*
+ * Unlink a key from a keyring or from the session keyring tree.
  */
 static int act_keyctl_unlink(int argc, char *argv[])
 {
 	key_serial_t keyring, key;
+	int n;
 
-	if (argc != 3)
+	if (argc != 2 && argc != 3)
 		format();
 
 	key = get_key_id(argv[1]);
-	keyring = get_key_id(argv[2]);
 
-	if (keyctl_unlink(key, keyring) < 0)
-		error("keyctl_unlink");
+	if (argc == 3) {
+		keyring = get_key_id(argv[2]);
+		if (keyctl_unlink(key, keyring) < 0)
+			error("keyctl_unlink");
+	} else {
+		n = recursive_session_key_scan(act_keyctl_unlink_func, &key);
+		printf("%d links removed\n", n);
+	}
 
 	return 0;
-
-} /* end act_keyctl_unlink() */
+}
 
 /*****************************************************************************/
 /*
