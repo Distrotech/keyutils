@@ -60,6 +60,8 @@
 static const char *DNS_PARSE_VERSION = "1.0";
 static const char prog[] = "key.dns_resolver";
 static const char key_type[] = "dns_resolver";
+static const char a_query_type[] = "a";
+static const char aaaa_query_type[] = "aaaa";
 static const char afsdb_query_type[] = "afsdb";
 static key_serial_t key;
 static int verbose;
@@ -73,11 +75,20 @@ static int debug_mode;
 	((MAX_VLS * (INET6_ADDRSTRLEN + 1)) + sizeof(DNS_EXPIRY_PREFIX) + \
 	 DNS_EXPIRY_TIME_LEN + 1 /* '#'*/ + 1 /* end 0 */)
 
-#define	INET_IP4_ONLY	0x1
-#define	INET_IP6_ONLY	0x2
-#define	INET_ALL	0xFF
+#define	INET_IP4_ONLY		0x1
+#define	INET_IP6_ONLY		0x2
+#define	INET_ALL		0xFF
+#define ONE_ADDR_ONLY		0x100
+#define LIST_MULTIPLE_ADDRS	0x200
 
 #define DNS_ERR_PREFIX	"#dnserror="
+
+/*
+ * segmental payload
+ */
+#define N_PAYLOAD 256
+struct iovec payload[N_PAYLOAD];
+int payload_index;
 
 /*
  * Print an error to stderr or the syslog, negate the key being created and
@@ -212,19 +223,94 @@ void debug(const char *fmt, ...)
 }
 
 /*
- * Perform address resolution on a hostname
+ * Append an address to the payload segment list
+ */
+static void append_address_to_payload(char *p, size_t sz)
+{
+	int loop;
+
+	debug("append '%*.*s'", (int)sz, (int)sz, p);
+
+	/* discard duplicates */
+	for (loop = 0; loop < payload_index; loop++)
+		if (payload[loop].iov_len == sz &&
+		    memcmp(payload[loop].iov_base, p, sz) == 0)
+			return;
+
+	if (payload_index != 0) {
+		if (payload_index + 2 > N_PAYLOAD - 1)
+			return;
+		payload[payload_index  ].iov_base = ",";
+		payload[payload_index++].iov_len = 1;
+	} else {
+		if (payload_index + 1 > N_PAYLOAD - 1)
+			return;
+	}
+
+	payload[payload_index  ].iov_base = p;
+	payload[payload_index++].iov_len = sz;
+}
+
+/*
+ * Dump the payload when debugging
+ */
+static void dump_payload(void)
+{
+	size_t plen, n;
+	char *buf, *p;
+	int loop;
+
+	if (debug_mode)
+		verbose = 1;
+	if (verbose < 1)
+		return;
+
+	plen = 0;
+	for (loop = 0; loop < payload_index; loop++) {
+		n = payload[loop].iov_len;
+		debug("seg[%d]: %zu", loop, n);
+		plen += n;
+	}
+	if (plen == 0) {
+		info("The key instantiation data is empty");
+		return;
+	}
+
+	debug("total: %zu", plen);
+	buf = malloc(plen + 1);
+	if (!buf)
+		return;
+
+	p = buf;
+	for (loop = 0; loop < payload_index; loop++) {
+		n = payload[loop].iov_len;
+		memcpy(p, payload[loop].iov_base, n);
+		p += n;
+	}
+
+	info("The key instantiation data is '%s'", buf);
+	free(buf);
+}
+
+/*
+ * Perform address resolution on a hostname and add the resulting address as a
+ * string to the list of payload segments.
  */
 static int
-dns_resolver(char *server_name, char *ip, short mask)
+dns_resolver(const char *server_name, unsigned mask)
 {
-	struct addrinfo hints, *addr;
+	struct addrinfo hints, *addr, *ai;
+	size_t slen;
+	char buf[INET6_ADDRSTRLEN + 1], *seg;
 	int ret, len;
-	void *p;
+	void *sa;
+
+	debug("Resolve '%s' with %x", server_name, mask);
 
 	memset(&hints, 0, sizeof(hints));
-	switch (mask) {
-	case INET_IP4_ONLY:	hints.ai_family = AF_INET;	break;
-	case INET_IP6_ONLY:	hints.ai_family = AF_INET6;	break;
+	switch (mask & INET_ALL) {
+	case INET_IP4_ONLY:	hints.ai_family = AF_INET;	debug("IPv4"); break;
+	case INET_IP6_ONLY:	hints.ai_family = AF_INET6;	debug("IPv6"); break;
 	default: break;
 	}
 
@@ -236,20 +322,45 @@ dns_resolver(char *server_name, char *ip, short mask)
 		return -1;
 	}
 
-	/* convert ip to string form */
-	if (addr->ai_family == AF_INET && (mask & INET_IP4_ONLY)) {
-		p = &(((struct sockaddr_in *)addr->ai_addr)->sin_addr);
-		len = INET_ADDRSTRLEN;
-	} else if (addr->ai_family == AF_INET6 && (mask & INET_IP6_ONLY)) {
-		p = &(((struct sockaddr_in6 *)addr->ai_addr)->sin6_addr);
-		len = INET6_ADDRSTRLEN;
-	} else {
-		freeaddrinfo(addr);
-		return -1;
-	}
+	debug("getaddrinfo = %d", ret);
 
-	if (!inet_ntop(addr->ai_family, p, ip, len))
-		error("%s: inet_ntop: %m", __func__);
+	for (ai = addr; ai; ai = ai->ai_next) {
+		debug("RR: %x,%x,%x,%x,%x,%s",
+		      ai->ai_flags, ai->ai_family,
+		      ai->ai_socktype, ai->ai_protocol,
+		      ai->ai_addrlen, ai->ai_canonname);
+
+		/* convert address to string */
+		switch (ai->ai_family) {
+		case AF_INET:
+			if (!(mask & INET_IP4_ONLY))
+				continue;
+			sa = &(((struct sockaddr_in *)ai->ai_addr)->sin_addr);
+			len = INET_ADDRSTRLEN;
+			break;
+		case AF_INET6:
+			if (!(mask & INET_IP6_ONLY))
+				continue;
+			sa = &(((struct sockaddr_in6 *)ai->ai_addr)->sin6_addr);
+			len = INET6_ADDRSTRLEN;
+			break;
+		default:
+			debug("Address of unknown family %u", addr->ai_family);
+			continue;
+		}
+
+		if (!inet_ntop(ai->ai_family, sa, buf, len))
+			error("%s: inet_ntop: %m", __func__);
+
+		slen = strlen(buf);
+		seg = malloc(slen);
+		if (!seg)
+			error("%s: inet_ntop: %m", __func__);
+		memcpy(seg, buf, slen);
+		append_address_to_payload(seg, slen);
+		if (mask & ONE_ADDR_ONLY)
+			break;
+	}
 
 	freeaddrinfo(addr);
 	return 0;
@@ -258,54 +369,42 @@ dns_resolver(char *server_name, char *ip, short mask)
 /*
  *
  */
-static void
-addVLServers(char *VLlist[],
-	     int *vlsnum,
-             ns_msg handle,
-             ns_sect section,
-	     char *result,
-	     short mask,
-	     unsigned long *_ttl)
+static void afsdb_hosts_to_addrs(char *vllist[],
+				 int *vlsnum,
+				 ns_msg handle,
+				 ns_sect section,
+				 unsigned mask,
+				 unsigned long *_ttl)
 {
-	int rrnum;  /* resource record number */
-	ns_rr rr;   /* expanded resource record */
-	char ip[INET6_ADDRSTRLEN];
-	char *p = result;
-	int subtype, i, ret, alen;
+	int rrnum;
+	ns_rr rr;
+	int subtype, i, ret;
 	unsigned int ttl = UINT_MAX, rr_ttl;
 
 	debug("AFSDB RR count is %d", ns_msg_count(handle, section));
 
-	/*
-	 * Look at all the resource records in this section.
-	 */
+	/* Look at all the resource records in this section. */
 	for (rrnum = 0; rrnum < ns_msg_count(handle, section); rrnum++) {
-		/*
-		 * Expand the resource record number rrnum into rr.
-		 */
+		/* Expand the resource record number rrnum into rr. */
 		if (ns_parserr(&handle, section, rrnum, &rr)) {
 			_error("ns_parserr failed : %m");
 			continue;
 		}
 
-		/*
-		 * We're only interested in AFSDB records
-		 */
+		/* We're only interested in AFSDB records */
 		if (ns_rr_type(rr) == ns_t_afsdb) {
-			VLlist[*vlsnum] = malloc(MAXDNAME);
-			if (!VLlist[*vlsnum])
+			vllist[*vlsnum] = malloc(MAXDNAME);
+			if (!vllist[*vlsnum])
 				error("Out of memory");
 
 			subtype = ns_get16(ns_rr_rdata(rr));
 
 			/* Expand the name server's domain name */
-			if (ns_name_uncompress(
-				    ns_msg_base(handle),/* Start of the message	*/
-				    ns_msg_end(handle), /* End of the message	*/
-				    ns_rr_rdata(rr) + 2,    /* Position in the message*/
-				    VLlist[*vlsnum],		/* Result	*/
-				    MAXDNAME		/* Size of VLlist buffer*/
-					       ) < 0)	/* Negative: error	*/
+			if (ns_name_uncompress(ns_msg_base(handle),
+					       ns_msg_end(handle),
+					       ns_rr_rdata(rr) + 2,
+					       vllist[*vlsnum],
+					       MAXDNAME) < 0)
 				error("ns_name_uncompress failed");
 
 			rr_ttl = ns_rr_ttl(rr);
@@ -313,41 +412,35 @@ addVLServers(char *VLlist[],
 				ttl = rr_ttl;
 
 			/* Check the domain name we've just unpacked and add it to
-			 * the list of name servers if it is not a duplicate.
+			 * the list of VL servers if it is not a duplicate.
 			 * If it is a duplicate, just ignore it.
 			 */
 			for (i = 0; i < *vlsnum; i++)
-				if (strcasecmp(VLlist[i], VLlist[*vlsnum]) == 0)
+				if (strcasecmp(vllist[i], vllist[*vlsnum]) == 0)
 					goto next_one;
 
 			/* Turn the hostname into IP addresses */
-			ret = dns_resolver(VLlist[*vlsnum], ip, mask);
+			ret = dns_resolver(vllist[*vlsnum], mask);
 			if (ret) {
 				debug("AFSDB RR can't resolve."
-				      "subtype:%d, server name:%s, netmask:%d",
-				      subtype, VLlist[*vlsnum], mask);
+				      "subtype:%d, server name:%s, netmask:%u",
+				      subtype, vllist[*vlsnum], mask);
 				goto next_one;
 			}
 
-			info("AFSDB RR subtype:%d, server name:%s, ip:%s, ttl:%u",
-			     subtype, VLlist[*vlsnum], ip, ttl);
-
-			/* colons are used in IPv6 addresses, so we use commas
-			 * to separate IP addresses
-			 */
-			if (p > result)
-				*p++ = ',';
-			alen = strlen(ip);
-			memcpy(p, ip, alen);
-			p += alen;
-			p[0] = '\0';
+			info("AFSDB RR subtype:%d, server name:%s, ip:%*.*s, ttl:%u",
+			     subtype, vllist[*vlsnum],
+			     (int)payload[payload_index - 1].iov_len,
+			     (int)payload[payload_index - 1].iov_len,
+			     (char *)payload[payload_index - 1].iov_base,
+			     ttl);
 
 			/* prepare for the next record */
-			(*vlsnum)++;
+			*vlsnum += 1;
 			continue;
 
 		next_one:
-			free(VLlist[*vlsnum]);
+			free(vllist[*vlsnum]);
 		}
 	}
 
@@ -356,20 +449,19 @@ addVLServers(char *VLlist[],
 }
 
 /*
- * Look up the AFSDB record to get the VL server addresses.
+ * Look up an AFSDB record to get the VL server addresses.
  *
  * The callout_info is parsed for request options.  For instance, "ipv4" to
  * request only IPv4 addresses and "ipv6" to request only IPv6 addresses.
  */
 static __attribute__((noreturn))
-int dns_get_vlserver(key_serial_t key, const char *cell, char *options)
+int dns_query_afsdb(key_serial_t key, const char *cell, char *options)
 {
 	int	ret;
-	char	*VLlist[MAX_VLS];	/* list of name servers	*/
-	char	ip[AFSDB_MAX_DATA_LEN];
+	char	*vllist[MAX_VLS];	/* list of name servers	*/
 	int	vlsnum = 0;		/* number of name servers in list */
-	short	mask = INET_ALL;
-	int	responseLen, len;	/* buffer length */
+	unsigned mask = INET_ALL;
+	int	response_len;		/* buffer length */
 	ns_msg	handle;			/* handle for response message */
 	unsigned long ttl = ULONG_MAX;
 	union {
@@ -379,13 +471,13 @@ int dns_get_vlserver(key_serial_t key, const char *cell, char *options)
 
 	debug("Get AFSDB RR for cell name:'%s', options:'%s'", cell, options);
 
-	/* query the dns for an AFSDB RR */
-	responseLen = res_query(cell,		/* the query to make */
-				ns_c_in,	/* record class */
-				ns_t_afsdb,	/* record type */
-				response.buf,
-				sizeof(response));
-	if (responseLen < 0) {
+	/* query the dns for an AFSDB resource record */
+	response_len = res_query(cell,
+				 ns_c_in,
+				 ns_t_afsdb,
+				 response.buf,
+				 sizeof(response));
+	if (response_len < 0) {
 		/* negative result; set an arbitrary timeout on the cache of 1
 		 * minute */
 		if (!debug_mode) {
@@ -396,7 +488,7 @@ int dns_get_vlserver(key_serial_t key, const char *cell, char *options)
 		nsError(h_errno, cell);
 	}
 
-	if (ns_initparse(response.buf, responseLen, &handle) < 0)
+	if (ns_initparse(response.buf, response_len, &handle) < 0)
 		error("ns_initparse: %m");
 
 	/* Is the IP address family limited? */
@@ -405,12 +497,10 @@ int dns_get_vlserver(key_serial_t key, const char *cell, char *options)
 	else if (strcmp(options, "ipv6") == 0)
 		mask = INET_IP6_ONLY;
 
-	/* look up a list of VL servers */
-	addVLServers(VLlist, &vlsnum, handle, ns_s_an, ip, mask, &ttl);
+	/* look up the hostnames we've obtained to get the actual addresses */
+	afsdb_hosts_to_addrs(vllist, &vlsnum, handle, ns_s_an, mask, &ttl);
 
-	info("DNS query AFSDB RR results:'%s' ttl:%lu", ip, ttl);
-
-	len = strlen(ip);
+	info("DNS query AFSDB RR results:%u ttl:%lu", payload_index, ttl);
 
 	/* set the key's expiry time from the minimum TTL encountered */
 	if (!debug_mode) {
@@ -420,17 +510,101 @@ int dns_get_vlserver(key_serial_t key, const char *cell, char *options)
 	}
 
 	/* handle a lack of results */
-	if (len == 0)
+	if (payload_index == 0)
 		nsError(NO_DATA, cell);
 
-	info("The key instantiation data is '%s'", ip);
+	/* must include a NUL char at the end of the payload */
+	payload[payload_index].iov_base = "";
+	payload[payload_index++].iov_len = 1;
+	dump_payload();
 
 	/* load the key with data key */
 	if (!debug_mode) {
-		ret = keyctl_instantiate(key, ip, strlen(ip) + 1, 0);
+		ret = keyctl_instantiate_iov(key, payload, payload_index, 0);
 		if (ret == -1)
 			error("%s: keyctl_instantiate: %m", __func__);
 	}
+
+	exit(0);
+}
+
+/*
+ * Look up a A and/or AAAA records to get host addresses
+ *
+ * The callout_info is parsed for request options.  For instance, "ipv4" to
+ * request only IPv4 addresses, "ipv6" to request only IPv6 addresses and
+ * "list" to get multiple addresses.
+ */
+static __attribute__((noreturn))
+int dns_query_a_or_aaaa(key_serial_t key, const char *hostname, char *options)
+{
+	unsigned mask;
+	int ret;
+
+	debug("Get A/AAAA RR for hostname:'%s', options:'%s'",
+	      hostname, options);
+
+	if (!options[0]) {
+		/* legacy mode */
+		mask = INET_IP4_ONLY | ONE_ADDR_ONLY;
+	} else {
+		char *key, *val;
+
+		mask = INET_ALL | ONE_ADDR_ONLY;
+
+		do {
+			key = options;
+			options = strchr(options, ' ');
+			if (!options)
+				options = key + strlen(key);
+			else
+				*options++ = '\0';
+			if (!*key)
+				continue;
+			if (strchr(key, ','))
+				error("Option name '%s' contains a comma", key);
+
+			val = strchr(key, '=');
+			if (val)
+				*val++ = '\0';
+
+			debug("Opt %s", key);
+
+			if (strcmp(key, "ipv4") == 0) {
+				mask &= ~INET_ALL;
+				mask |= INET_IP4_ONLY;
+			} else if (strcmp(key, "ipv6") == 0) {
+				mask &= ~INET_ALL;
+				mask |= INET_IP6_ONLY;
+			} else if (strcmp(key, "list") == 0) {
+				mask &= ~ONE_ADDR_ONLY;
+				mask |= LIST_MULTIPLE_ADDRS;
+			}
+
+		} while (*options);
+	}
+
+	/* Turn the hostname into IP addresses */
+	ret = dns_resolver(hostname, mask);
+	if (ret)
+		nsError(NO_DATA, hostname);
+
+	/* handle a lack of results */
+	if (payload_index == 0)
+		nsError(NO_DATA, hostname);
+
+	/* must include a NUL char at the end of the payload */
+	payload[payload_index].iov_base = "";
+	payload[payload_index++].iov_len = 1;
+	dump_payload();
+
+	/* load the key with data key */
+	if (!debug_mode) {
+		ret = keyctl_instantiate_iov(key, payload, payload_index, 0);
+		if (ret == -1)
+			error("%s: keyctl_instantiate: %m", __func__);
+	}
+
 	exit(0);
 }
 
@@ -462,7 +636,9 @@ const struct option long_options[] = {
 	{ NULL,		0, NULL, 0 }
 };
 
-
+/*
+ *
+ */
 int main(int argc, char *argv[])
 {
 	int ktlen, qtlen, ret;
@@ -539,13 +715,14 @@ int main(int argc, char *argv[])
 		error("Badly formatted key description '%s'", buf);
 	ktlen = p - buf;
 
+	/* make sure it's the type we are expecting */
 	if (ktlen != sizeof(key_type) - 1 ||
 	    memcmp(buf, key_type, ktlen) != 0)
 		error("Key type is not supported: '%*.*s'", ktlen, ktlen, buf);
 
 	keyend = buf + ktlen + 1;
 
-	/* the actual key description is after the last semicolon */
+	/* the actual key description follows the last semicolon */
 	keyend = rindex(keyend, ';');
 	if (!keyend)
 		error("Invalid key description: %s", buf);
@@ -553,16 +730,27 @@ int main(int argc, char *argv[])
 
 	name = index(keyend, ':');
 	if (!name)
-		error("Missing query type: '%s'", keyend);
+		dns_query_a_or_aaaa(key, keyend, callout_info);
+
 	qtlen = name - keyend;
 	name++;
+
+	if ((qtlen == sizeof(a_query_type) - 1 &&
+	     memcmp(keyend, a_query_type, sizeof(a_query_type) - 1) == 0) ||
+	    (qtlen == sizeof(aaaa_query_type) - 1 &&
+	     memcmp(keyend, aaaa_query_type, sizeof(aaaa_query_type) - 1) == 0)
+	    ) {
+		info("Do DNS query of A/AAAA type for:'%s' mask:'%s'",
+		     name, callout_info);
+		dns_query_a_or_aaaa(key, name, callout_info);
+	}
 
 	if (qtlen == sizeof(afsdb_query_type) - 1 &&
 	    memcmp(keyend, afsdb_query_type, sizeof(afsdb_query_type) - 1) == 0
 	    ) {
 		info("Do DNS query of AFSDB type for:'%s' mask:'%s'",
 		     name, callout_info);
-		dns_get_vlserver(key, name, callout_info);
+		dns_query_afsdb(key, name, callout_info);
 	}
 
 	error("Query type: \"%*.*s\" is not supported", qtlen, qtlen, keyend);

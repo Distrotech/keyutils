@@ -188,7 +188,7 @@ endif
 ###############################################################################
 clean:
 	$(RM) libkeyutils*
-	$(RM) keyctl request-key
+	$(RM) keyctl request-key key.dns_resolver
 	$(RM) *.o *.os *~
 	$(RM) debugfiles.list debugsources.list
 
