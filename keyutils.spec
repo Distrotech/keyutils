@@ -101,7 +101,7 @@ rm -rf $RPM_BUILD_ROOT
 - Provide RPM build rule in Makefile.
 - Provide distclean rule in Makefile.
 
-* Fri Dec 17 2010 Diego Elio Pettenò <flameeyes@hosting.flameeyes.eu> - 1.4-3
+* Fri Dec 17 2010 Diego Elio PettenÃ² <flameeyes@hosting.flameeyes.eu> - 1.4-3
 - Fix local linking and RPATH.
 
 * Thu Jun 10 2010 David Howells  <dhowells@redhat.com> - 1.4-2
