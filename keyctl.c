@@ -1,6 +1,6 @@
 /* keyctl.c: key control program
  *
- * Copyright (C) 2005 Red Hat, Inc. All Rights Reserved.
+ * Copyright (C) 2005, 2011 Red Hat, Inc. All Rights Reserved.
  * Written by David Howells (dhowells@redhat.com)
  *
  * This program is free software; you can redistribute it and/or
@@ -9,6 +9,7 @@
  * 2 of the License, or (at your option) any later version.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -59,6 +60,7 @@ static int act_keyctl_security(int argc, char *argv[]);
 static int act_keyctl_new_session(int argc, char *argv[]);
 static int act_keyctl_reject(int argc, char *argv[]);
 static int act_keyctl_reap(int argc, char *argv[]);
+static int act_keyctl_purge(int argc, char *argv[]);
 
 const struct command commands[] = {
 	{ act_keyctl_show,	"show",		"" },
@@ -96,6 +98,9 @@ const struct command commands[] = {
 	{ act_keyctl_new_session, "new_session",	"" },
 	{ act_keyctl_reject,	"reject",	"<key> <timeout> <error> <keyring>" },
 	{ act_keyctl_reap,	"reap",		"[-v]" },
+	{ act_keyctl_purge,	"purge",	"<type>" },
+	{ act_keyctl_purge,	"purge",	"[-p] [-i] <type> <desc>" },
+	{ act_keyctl_purge,	"purge",	"-s <type> <desc>" },
 	{ NULL, NULL, NULL }
 };
 
@@ -1335,6 +1340,173 @@ static int act_keyctl_reap(int argc, char *argv[])
 
 	n = recursive_session_key_scan(act_keyctl_reap_func, NULL);
 	printf("%d keys reaped\n", n);
+	return 0;
+}
+
+struct purge_data {
+	const char	*type;
+	const char	*desc;
+	size_t		desc_len;
+	size_t		type_len;
+	char		prefix_match;
+	char		case_indep;
+};
+
+/*
+ * Attempt to unlink a key matching the type
+ */
+static int act_keyctl_purge_type_func(key_serial_t parent, key_serial_t key,
+				      char *raw, int raw_len, void *data)
+{
+	const struct purge_data *purge = data;
+	char *p, *type;
+
+	if (parent == 0 || !raw)
+		return 0;
+
+	/* type is everything before the first semicolon */
+	type = raw;
+	p = memchr(raw, ';', raw_len);
+	if (!p)
+		return 0;
+	*p = 0;
+	if (strcmp(type, purge->type) != 0)
+		return 0;
+
+	return keyctl_unlink(key, parent) < 0 ? 0 : 1;
+}
+
+/*
+ * Attempt to unlink a key matching the type and description literally
+ */
+static int act_keyctl_purge_literal_func(key_serial_t parent, key_serial_t key,
+					 char *raw, int raw_len, void *data)
+{
+	const struct purge_data *purge = data;
+	size_t tlen;
+	char *p, *type, *desc;
+
+	if (parent == 0 || !raw)
+		return 0;
+
+	/* type is everything before the first semicolon */
+	type = raw;
+	p = memchr(type, ';', raw_len);
+	if (!p)
+		return 0;
+
+	tlen = p - type;
+	if (tlen != purge->type_len)
+		return 0;
+	if (memcmp(type, purge->type, tlen) != 0)
+		return 0;
+
+	/* description is everything after the last semicolon */
+	p++;
+	desc = memrchr(p, ';', raw + raw_len - p);
+	if (!desc)
+		return 0;
+	desc++;
+
+	if (purge->prefix_match) {
+		if (raw_len - (desc - raw) < purge->desc_len)
+			return 0;
+	} else {
+		if (raw_len - (desc - raw) != purge->desc_len)
+			return 0;
+	}
+
+	if (purge->case_indep) {
+		if (strncasecmp(purge->desc, desc, purge->desc_len) != 0)
+			return 0;
+	} else {
+		if (memcmp(purge->desc, desc, purge->desc_len) != 0)
+			return 0;
+	}
+
+	printf("%*.*s '%s'\n", (int)tlen, (int)tlen, type, desc);
+
+	return keyctl_unlink(key, parent) < 0 ? 0 : 1;
+}
+
+/*
+ * Attempt to unlink a key matching the type and description literally
+ */
+static int act_keyctl_purge_search_func(key_serial_t parent, key_serial_t keyring,
+					char *raw, int raw_len, void *data)
+{
+	const struct purge_data *purge = data;
+	key_serial_t key;
+	int kcount = 0;
+
+	if (!raw || memcmp(raw, "keyring;", 8) != 0)
+		return 0;
+
+	for (;;) {
+		key = keyctl_search(keyring, purge->type, purge->desc, 0);
+		if (keyctl_unlink(key, keyring) < 0)
+			return kcount;
+		kcount++;
+	}
+	return kcount;
+}
+
+/*
+ * Purge matching keys from a keyring
+ */
+static int act_keyctl_purge(int argc, char *argv[])
+{
+	recursive_key_scanner_t func;
+	struct purge_data purge = {
+		.prefix_match	= 0,
+		.case_indep	= 0,
+	};
+	int n = 0, search_mode = 0;
+
+	argc--;
+	argv++;
+	while (argc > 0 && argv[0][0] == '-') {
+		if (argv[0][1] == 's')
+			search_mode = 1;
+		else if (argv[0][1] == 'p')
+			purge.prefix_match = 1;
+		else if (argv[0][1] == 'i')
+			purge.case_indep = 1;
+		else
+			format();
+		argc--;
+		argv++;
+	}
+
+	if (argc < 1)
+		format();
+
+	purge.type	= argv[0];
+	purge.desc	= argv[1];
+	purge.type_len	= strlen(purge.type);
+	purge.desc_len	= purge.desc ? strlen(purge.desc) : 0;
+
+	if (search_mode == 1) {
+		if (argc != 2 || purge.prefix_match || purge.case_indep)
+			format();
+		/* purge all keys of a specific type and description, according
+		 * to the kernel's comparator */
+		func = act_keyctl_purge_search_func;
+	} else if (argc == 1) {
+		if (purge.prefix_match || purge.case_indep)
+			format();
+		/* purge all keys of a specific type */
+		func = act_keyctl_purge_type_func;
+	} else if (argc == 2) {
+		/* purge all keys of a specific type with literally matching
+		 * description */
+		func = act_keyctl_purge_literal_func;
+	} else {
+		format();
+	}
+
+	n = recursive_session_key_scan(func, &purge);
+	printf("purged %d keys\n", n);
 	return 0;
 }
 
