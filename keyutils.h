@@ -1,6 +1,6 @@
 /* keyutils.h: key utility library interface
  *
- * Copyright (C) 2005 Red Hat, Inc. All Rights Reserved.
+ * Copyright (C) 2005,2011 Red Hat, Inc. All Rights Reserved.
  * Written by David Howells (dhowells@redhat.com)
  *
  * This program is free software; you can redistribute it and/or
@@ -91,6 +91,7 @@ typedef uint32_t key_perm_t;
 #define KEYCTL_ASSUME_AUTHORITY		16	/* assume authority to instantiate key */
 #define KEYCTL_GET_SECURITY		17	/* get key security label */
 #define KEYCTL_SESSION_TO_PARENT	18	/* set my session keyring on my parent process */
+#define KEYCTL_REJECT			19	/* reject a partially constructed key */
 
 /*
  * syscall wrappers
@@ -136,6 +137,8 @@ extern long keyctl_set_timeout(key_serial_t key, unsigned timeout);
 extern long keyctl_assume_authority(key_serial_t key);
 extern long keyctl_get_security(key_serial_t key, char *buffer, size_t buflen);
 extern long keyctl_session_to_parent(void);
+extern long keyctl_reject(key_serial_t id, unsigned timeout, unsigned error,
+			  key_serial_t ringid);
 
 /*
  * utilities

@@ -4,12 +4,12 @@
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
 %define libapivermajor 1
-%define libapiversion %{libapivermajor}.3
+%define libapiversion %{libapivermajor}.4
 
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 4%{?dist}
+Release: 4.dev%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux

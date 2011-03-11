@@ -40,3 +40,9 @@ KEYUTILS_1.3 {
 	keyctl_session_to_parent;
 
 } KEYUTILS_1.0;
+
+KEYUTILS_1.4 {
+	/* management functions */
+	keyctl_reject;
+
+} KEYUTILS_1.3;

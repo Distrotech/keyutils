@@ -1,6 +1,6 @@
 /* keyutils.c: key utility library
  *
- * Copyright (C) 2005 Red Hat, Inc. All Rights Reserved.
+ * Copyright (C) 2005,2011 Red Hat, Inc. All Rights Reserved.
  * Written by David Howells (dhowells@redhat.com)
  *
  * This program is free software; you can redistribute it and/or
@@ -173,6 +173,12 @@ long keyctl_get_security(key_serial_t id, char *buffer, size_t buflen)
 long keyctl_session_to_parent(void)
 {
 	return keyctl(KEYCTL_SESSION_TO_PARENT);
+}
+
+long keyctl_reject(key_serial_t id, unsigned timeout, unsigned error,
+		   key_serial_t ringid)
+{
+	return keyctl(KEYCTL_REJECT, id, timeout, error, ringid);
 }
 
 /*****************************************************************************/

@@ -57,6 +57,7 @@ static int act_keyctl_negate(int argc, char *argv[]);
 static int act_keyctl_timeout(int argc, char *argv[]);
 static int act_keyctl_security(int argc, char *argv[]);
 static int act_keyctl_new_session(int argc, char *argv[]);
+static int act_keyctl_reject(int argc, char *argv[]);
 
 const struct command commands[] = {
 	{ act_keyctl_show,	"show",		"" },
@@ -92,6 +93,7 @@ const struct command commands[] = {
 	{ act_keyctl_timeout,	"timeout",	"<key> <timeout>" },
 	{ act_keyctl_security,	"security",	"<key>" },
 	{ act_keyctl_new_session, "new_session",	"" },
+	{ act_keyctl_reject,	"reject",	"<key> <timeout> <error> <keyring>" },
 	{ NULL, NULL, NULL }
 };
 
@@ -1225,6 +1227,50 @@ static int act_keyctl_new_session(int argc, char *argv[])
 
 	/* print the resulting key ID */
 	printf("%d\n", keyring);
+	return 0;
+}
+
+/*****************************************************************************/
+/*
+ * reject a key that's under construction
+ */
+static int act_keyctl_reject(int argc, char *argv[])
+{
+	unsigned long timeout;
+	key_serial_t key, dest;
+	unsigned long rejerr;
+	char *q;
+
+	if (argc != 5)
+		format();
+
+	key = get_key_id(argv[1]);
+
+	timeout = strtoul(argv[2], &q, 10);
+	if (*q) {
+		fprintf(stderr, "Unparsable timeout: '%s'\n", argv[2]);
+		exit(2);
+	}
+
+	if (strcmp(argv[3], "rejected") == 0) {
+		rejerr = EKEYREJECTED;
+	} else if (strcmp(argv[3], "revoked") == 0) {
+		rejerr = EKEYREVOKED;
+	} else if (strcmp(argv[3], "expired") == 0) {
+		rejerr = EKEYEXPIRED;
+	} else {
+		rejerr = strtoul(argv[3], &q, 10);
+		if (*q) {
+			fprintf(stderr, "Unparsable error: '%s'\n", argv[3]);
+			exit(2);
+		}
+	}
+
+	dest = get_key_id(argv[4]);
+
+	if (keyctl_reject(key, timeout, rejerr, dest) < 0)
+		error("keyctl_negate");
+
 	return 0;
 }
 

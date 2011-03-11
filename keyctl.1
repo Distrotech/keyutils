@@ -71,6 +71,8 @@ keyctl - Key management facility control
 .br
 \fBkeyctl\fR negate <key> <timeout> <keyring>
 .br
+\fBkeyctl\fR reject <key> <timeout> <error> <keyring>
+.br
 \fBkeyctl\fR timeout <key> <timeout>
 .br
 \fBkeyctl\fR security <key>
@@ -542,14 +544,20 @@ keyring;4043;4043;3f1f0000;fish
 \fBkeyctl pinstantiate\fR <key> <keyring>
 .br
 \fBkeyctl negate\fR <key> <timeout> <keyring>
+.br
+\fBkeyctl reject\fR <key> <timeout> <error> <keyring>
 .P
 These commands are used to attach data to a partially set up key (as created by
-the kernel and passed to /sbin/request-key). "instantiate" marks a key as being
-valid and attaches the data as the payload. "negate" marks a key as invalid and
-sets a timeout on it so that it'll go away after a while. This prevents a lot
-of quickly sequential requests from slowing the system down overmuch when they
-all fail, as all subsequent requests will then fail with error "Requested key
-not found" until the negative key has expired.
+the kernel and passed to /sbin/request-key).  "instantiate" marks a key as
+being valid and attaches the data as the payload.  "negate" and "reject" mark a
+key as invalid and sets a timeout on it so that it'll go away after a while.
+This prevents a lot of quickly sequential requests from slowing the system down
+overmuch when they all fail, as all subsequent requests will then fail with
+error "Requested key not found" (if negated) or the specified error (if
+rejected) until the negative key has expired.
+.P
+Reject's error argument can either be a UNIX error number or one of
+.BR "" "'" rejected "', '" expired "' or '" revoked "'."
 .P
 The newly instantiated key will be attached to the specified keyring.
 .P
@@ -562,6 +570,8 @@ has been instantiated one way or another.
 testbox>keyctl instantiate $1 "Debug $3" $4
 .br
 testbox>keyctl negate $1 30 $4
+.br
+testbox>keyctl reject $1 30 64 $4
 .RE
 .P
 The \fBpinstantiate\fR variant of the command reads the data from stdin rather
