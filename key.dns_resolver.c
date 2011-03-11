@@ -81,8 +81,6 @@ static int debug_mode;
 #define ONE_ADDR_ONLY		0x100
 #define LIST_MULTIPLE_ADDRS	0x200
 
-#define DNS_ERR_PREFIX	"#dnserror="
-
 /*
  * segmental payload
  */
@@ -175,7 +173,7 @@ static const int ns_errno_map[] = {
 static __attribute__((noreturn))
 void nsError(int err, const char *domain)
 {
-	char buf[AFSDB_MAX_DATA_LEN];
+	unsigned timeout = 1 * 60;
 	int ret;
 
 	if (isatty(2))
@@ -184,18 +182,21 @@ void nsError(int err, const char *domain)
 		syslog(LOG_INFO, "%s: %s", domain, hstrerror(err));
 
 	if (err >= sizeof(ns_errno_map) / sizeof(ns_errno_map[0]))
-		err = -ECONNREFUSED;
+		err = ECONNREFUSED;
 	else
 		err = ns_errno_map[err];
 
-	sprintf(buf, "%s%d", DNS_ERR_PREFIX, err);
+	info("Reject the key with error %d", err);
 
-	info("The key instantiation ERROR data is '%s'", buf);
+	if (err == EAGAIN)
+		timeout = 1;
+	else if (err == ECONNREFUSED)
+		timeout = 10;
 
 	if (!debug_mode) {
-		ret = keyctl_instantiate(key, buf, strlen(buf) + 1, 0);
+		ret = keyctl_reject(key, timeout, err, KEY_REQKEY_DEFL_DEFAULT);
 		if (ret == -1)
-			error("%s: keyctl_instantiate: %m", __func__);
+			error("%s: keyctl_reject: %m", __func__);
 	}
 	exit(0);
 }
@@ -477,16 +478,10 @@ int dns_query_afsdb(key_serial_t key, const char *cell, char *options)
 				 ns_t_afsdb,
 				 response.buf,
 				 sizeof(response));
-	if (response_len < 0) {
-		/* negative result; set an arbitrary timeout on the cache of 1
-		 * minute */
-		if (!debug_mode) {
-			ret = keyctl_set_timeout(key, 1 * 60);
-			if (ret == -1)
-				error("%s: keyctl_set_timeout: %m", __func__);
-		}
+
+	if (response_len < 0)
+		/* negative result */
 		nsError(h_errno, cell);
-	}
 
 	if (ns_initparse(response.buf, response_len, &handle) < 0)
 		error("ns_initparse: %m");
