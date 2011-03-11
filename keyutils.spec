@@ -1,5 +1,5 @@
 %define vermajor 1
-%define verminor 4
+%define verminor 5
 %define version %{vermajor}.%{verminor}
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
@@ -9,7 +9,7 @@
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 4.dev%{?dist}
+Release: 1%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux
@@ -92,6 +92,22 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Thu Mar 10 2011 David Howells  <dhowells@redhat.com> - 1.5-1
+- Disable RPATH setting in Makefile.
+- Add -I. to build to get this keyutils.h.
+- Make CFLAGS override on make command line work right.
+- Make specfile UTF-8.
+- Support KEYCTL_REJECT.
+- Support KEYCTL_INSTANTIATE_IOV.
+- Add AFSDB DNS lookup program from Wang Lei.
+- Generalise DNS lookup program.
+- Add recursive scan utility function.
+- Add bad key reap command to keyctl.
+- Add multi-unlink variant to keyctl unlink command.
+- Add multi key purger command to keyctl.
+- Handle multi-line commands in keyctl command table.
+- Move the package to version to 1.5.
+
 * Tue Mar 1 2011 David Howells  <dhowells@redhat.com> - 1.4-4
 - Make build guess at default libdirs and word size.
 - Make program build depend on library in Makefile.
