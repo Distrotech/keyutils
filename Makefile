@@ -1,4 +1,5 @@
-CFLAGS		:= -g -O2 -Wall
+CPPFLAGS	:= -I.
+CFLAGS		:= $(CPPFLAGS) -g -Wall -Werror
 INSTALL		:= install
 DESTDIR		:=
 SPECFILE	:= keyutils.spec
@@ -99,7 +100,7 @@ $(ARLIB): keyutils.o
 endif
 
 keyutils.o: keyutils.c keyutils.h Makefile
-	$(CC) $(CFLAGS) -UNO_GLIBC_KEYERR -o $@ -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -UNO_GLIBC_KEYERR -o $@ -c $<
 
 
 $(DEVELLIB): $(SONAME)
@@ -121,10 +122,13 @@ keyutils.os: keyutils.c keyutils.h Makefile
 # Build the programs
 #
 ###############################################################################
-keyctl: keyctl.c keyutils.h Makefile -lkeyutils
+%.o: %.c keyutils.h Makefile
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
+
+keyctl: keyctl.o -lkeyutils
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
-request-key: request-key.c keyutils.h Makefile -lkeyutils
+request-key: request-key.o -lkeyutils
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
 ###############################################################################

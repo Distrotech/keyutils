@@ -51,7 +51,7 @@ make \
 	USRLIBDIR=%{usrlibdir} \
 	RELEASE=.%{release} \
 	NO_GLIBC_KEYERR=1 \
-	CFLAGS="-Wall $RPM_OPT_FLAGS"
+	CFLAGS="-Wall $RPM_OPT_FLAGS -Werror"
 
 %install
 rm -rf $RPM_BUILD_ROOT
