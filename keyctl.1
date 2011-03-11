@@ -76,6 +76,8 @@ keyctl - Key management facility control
 \fBkeyctl\fR timeout <key> <timeout>
 .br
 \fBkeyctl\fR security <key>
+.br
+\fBkeyctl\fR reap [-v]
 .SH DESCRIPTION
 This program is used to control the key management facility in various ways
 using a variety of subcommands.
@@ -640,6 +642,23 @@ call, and so may only affect processes with matching credentials.
 Furthermore, the change does not take effect till the parent process next
 transitions from kernel space to user space - typically when the \fBwait\fP()
 system call returns.
+.P
+(*) \fBRemove dead keys from the session keyring tree\fR
+.P
+\fBkeyctl reap\fR
+.P
+This command performs a depth-first search of the caller's session keyring tree
+and attempts to unlink any key that it finds that is inaccessible due to
+expiry, revocation, rejection or negation.  It does not attempt to remove live
+keys that are unavailable simply due to a lack of granted permission.
+.P
+A key that is designated reapable will only be removed from a keyring if the
+caller has Write permission on that keyring, and only keyrings that grant
+Search permission to the caller will be searched.
+.P
+The command prints the number of keys reaped before it exits.  If the \fB-v\fR
+flag is passed then the reaped keys are listed as they're being reaped,
+together with the success or failure of the unlink.
 .SH ERRORS
 .P
 There are a number of common errors returned by this program:

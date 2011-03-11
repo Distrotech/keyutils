@@ -58,6 +58,7 @@ static int act_keyctl_timeout(int argc, char *argv[]);
 static int act_keyctl_security(int argc, char *argv[]);
 static int act_keyctl_new_session(int argc, char *argv[]);
 static int act_keyctl_reject(int argc, char *argv[]);
+static int act_keyctl_reap(int argc, char *argv[]);
 
 const struct command commands[] = {
 	{ act_keyctl_show,	"show",		"" },
@@ -94,6 +95,7 @@ const struct command commands[] = {
 	{ act_keyctl_security,	"security",	"<key>" },
 	{ act_keyctl_new_session, "new_session",	"" },
 	{ act_keyctl_reject,	"reject",	"<key> <timeout> <error> <keyring>" },
+	{ act_keyctl_reap,	"reap",		"[-v]" },
 	{ NULL, NULL, NULL }
 };
 
@@ -105,6 +107,7 @@ static key_serial_t get_key_id(const char *arg);
 static uid_t myuid;
 static gid_t mygid, *mygroups;
 static int myngroups;
+static int verbose;
 
 /*****************************************************************************/
 /*
@@ -1271,6 +1274,50 @@ static int act_keyctl_reject(int argc, char *argv[])
 	if (keyctl_reject(key, timeout, rejerr, dest) < 0)
 		error("keyctl_negate");
 
+	return 0;
+}
+
+/*
+ * Attempt to unlink a key if we can't read it for reasons other than we don't
+ * have permission
+ */
+static int act_keyctl_reap_func(key_serial_t parent, key_serial_t key,
+				char *desc, int desc_len, void *data)
+{
+	if (desc_len < 0 && errno != EACCES) {
+		if (verbose)
+			printf("Reap %d", key);
+		if (keyctl_unlink(key, parent) < 0) {
+			if (verbose)
+				printf("... failed %m\n");
+			return 0;
+		} else {
+			if (verbose)
+				printf("\n");
+			return 1;
+		};
+	}
+	return 0;
+}
+
+/*
+ * Reap the dead keys from the session keyring tree
+ */
+static int act_keyctl_reap(int argc, char *argv[])
+{
+	int n;
+
+	if (argc > 1 && strcmp(argv[1], "-v") == 0) {
+		verbose = 1;
+		argc--;
+		argv++;
+	}
+
+	if (argc != 1)
+		format();
+
+	n = recursive_session_key_scan(act_keyctl_reap_func, NULL);
+	printf("%d keys reaped\n", n);
 	return 0;
 }
 
