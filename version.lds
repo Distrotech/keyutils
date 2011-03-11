@@ -44,5 +44,6 @@ KEYUTILS_1.3 {
 KEYUTILS_1.4 {
 	/* management functions */
 	keyctl_reject;
+	keyctl_instantiate_iov;
 
 } KEYUTILS_1.3;

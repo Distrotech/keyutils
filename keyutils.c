@@ -181,6 +181,14 @@ long keyctl_reject(key_serial_t id, unsigned timeout, unsigned error,
 	return keyctl(KEYCTL_REJECT, id, timeout, error, ringid);
 }
 
+long keyctl_instantiate_iov(key_serial_t id,
+			    const struct iovec *payload_iov,
+			    unsigned ioc,
+			    key_serial_t ringid)
+{
+	return keyctl(KEYCTL_INSTANTIATE_IOV, id, payload_iov, ioc, ringid);
+}
+
 /*****************************************************************************/
 /*
  * fetch key description into an allocated buffer

@@ -12,7 +12,9 @@
 .SH NAME
 keyctl_assume_authority \- Assume the authority to instantiate a key
 .br
-keyctl_instantiate \- Instantiate a key
+keyctl_instantiate \- Instantiate a key from flat data
+.br
+keyctl_instantiate_iov \- Instantiate a key from segmented data
 .br
 keyctl_reject \- Negatively instantiate a key specifying search error
 .br
@@ -26,6 +28,10 @@ keyctl_negate \- Negatively instantiate a key
 .sp
 .BI "long keyctl_instantiate(key_serial_t " key ", const void *" payload ,
 .BI "size_t " plen ", key_serial_t " keyring ");"
+.sp
+.BI "long keyctl_instantiate_iov(key_serial_t " key ,
+.BI "const struct iovec *" payload_iov ", unsigned " ioc ,
+.BI "key_serial_t " keyring ");"
 .sp
 .BI "long keyctl_negate(key_serial_t " key ", unsigned " timeout ,
 .BI "key_serial_t " keyring ");"
@@ -78,6 +84,18 @@ may be NULL and
 .I plen
 may be zero if the key type permits that.  The key type may reject the data if
 it's in the wrong format or in some other way invalid.
+.P
+.BR keyctl_instantiate_iov ()
+is similar, but the data is passed in an array of iovec structs instead of in
+a flat buffer.
+.I payload_iov
+points to the base of the array and
+.I ioc
+indicates how many elements there are.
+.I payload_iov
+may be NULL or
+.I ioc
+may be zero to indicate that no data is being supplied.
 .P
 .BR keyctl_reject ()
 marks a key as negatively instantiated and sets the expiration timer on it.

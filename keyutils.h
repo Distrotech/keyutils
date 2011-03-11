@@ -92,6 +92,7 @@ typedef uint32_t key_perm_t;
 #define KEYCTL_GET_SECURITY		17	/* get key security label */
 #define KEYCTL_SESSION_TO_PARENT	18	/* set my session keyring on my parent process */
 #define KEYCTL_REJECT			19	/* reject a partially constructed key */
+#define KEYCTL_INSTANTIATE_IOV		20	/* instantiate a partially constructed key */
 
 /*
  * syscall wrappers
@@ -139,6 +140,11 @@ extern long keyctl_get_security(key_serial_t key, char *buffer, size_t buflen);
 extern long keyctl_session_to_parent(void);
 extern long keyctl_reject(key_serial_t id, unsigned timeout, unsigned error,
 			  key_serial_t ringid);
+struct iovec;
+extern long keyctl_instantiate_iov(key_serial_t id,
+				   const struct iovec *payload_iov,
+				   unsigned ioc,
+				   key_serial_t ringid);
 
 /*
  * utilities
