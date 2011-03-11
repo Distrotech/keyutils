@@ -90,7 +90,7 @@ all: $(DEVELLIB) keyctl request-key
 # Build the libraries
 #
 ###############################################################################
-RPATH = -Wl,-rpath,$(LIBDIR)
+#RPATH = -Wl,-rpath,$(LIBDIR)
 
 ifeq ($(NO_ARLIB),0)
 all: $(ARLIB)
