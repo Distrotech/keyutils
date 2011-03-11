@@ -84,7 +84,7 @@ endif
 # Normal build rule
 #
 ###############################################################################
-all: $(DEVELLIB) keyctl request-key
+all: $(DEVELLIB) keyctl request-key key.dns_resolver
 
 ###############################################################################
 #
@@ -131,6 +131,9 @@ keyctl: keyctl.o -lkeyutils
 request-key: request-key.o -lkeyutils
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
+key.dns_resolver: key.dns_resolver.o -lkeyutils
+	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils -lresolv
+
 ###############################################################################
 #
 # Install everything
@@ -147,6 +150,7 @@ endif
 	$(INSTALL) -D keyctl $(DESTDIR)$(BINDIR)/keyctl
 	$(INSTALL) -D request-key $(DESTDIR)$(SBINDIR)/request-key
 	$(INSTALL) -D request-key-debug.sh $(DESTDIR)$(SHAREDIR)/request-key-debug.sh
+	$(INSTALL) -D key.dns_resolver $(DESTDIR)$(SBINDIR)/key.dns_resolver
 	$(INSTALL) -D -m 0644 request-key.conf $(DESTDIR)$(ETCDIR)/request-key.conf
 	$(INSTALL) -D -m 0644 keyctl.1 $(DESTDIR)$(MAN1)/keyctl.1
 	$(INSTALL) -D -m 0644 keyctl_chown.3 $(DESTDIR)$(MAN3)/keyctl_chown.3
@@ -174,6 +178,7 @@ endif
 	$(INSTALL) -D -m 0644 keyctl_update.3 $(DESTDIR)$(MAN3)/keyctl_update.3
 	$(INSTALL) -D -m 0644 request-key.conf.5 $(DESTDIR)$(MAN5)/request-key.conf.5
 	$(INSTALL) -D -m 0644 request-key.8 $(DESTDIR)$(MAN8)/request-key.8
+	$(INSTALL) -D -m 0644 key.dns_resolver.8 $(DESTDIR)$(MAN8)/key.dns_resolver.8
 	$(INSTALL) -D -m 0644 keyutils.h $(DESTDIR)$(INCLUDEDIR)/keyutils.h
 
 ###############################################################################
