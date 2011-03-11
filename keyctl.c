@@ -63,45 +63,45 @@ static int act_keyctl_reap(int argc, char *argv[]);
 static int act_keyctl_purge(int argc, char *argv[]);
 
 const struct command commands[] = {
-	{ act_keyctl_show,	"show",		"" },
 	{ act_keyctl_add,	"add",		"<type> <desc> <data> <keyring>" },
+	{ act_keyctl_chgrp,	"chgrp",	"<key> <gid>" },
+	{ act_keyctl_chown,	"chown",	"<key> <uid>" },
+	{ act_keyctl_clear,	"clear",	"<keyring>" },
+	{ act_keyctl_describe,	"describe",	"<keyring>" },
+	{ act_keyctl_instantiate, "instantiate","<key> <data> <keyring>" },
+	{ act_keyctl_link,	"link",		"<key> <keyring>" },
+	{ act_keyctl_list,	"list",		"<keyring>" },
+	{ act_keyctl_negate,	"negate",	"<key> <timeout> <keyring>" },
+	{ act_keyctl_new_session, "new_session",	"" },
+	{ act_keyctl_newring,	"newring",	"<name> <keyring>" },
 	{ act_keyctl_padd,	"padd",		"<type> <desc> <keyring>" },
+	{ act_keyctl_pinstantiate, "pinstantiate","<key> <keyring>" },
+	{ act_keyctl_pipe,	"pipe",		"<key>" },
+	{ act_keyctl_prequest2,	"prequest2",	"<type> <desc> [<dest_keyring>]" },
+	{ act_keyctl_print,	"print",	"<key>" },
+	{ act_keyctl_pupdate,	"pupdate",	"<key>" },
+	{ act_keyctl_purge,	"purge",	"<type>" },
+	{ NULL,			"purge",	"[-p] [-i] <type> <desc>" },
+	{ NULL,			"purge",	"-s <type> <desc>" },
+	{ act_keyctl_rdescribe,	"rdescribe",	"<keyring> [sep]" },
+	{ act_keyctl_read,	"read",		"<key>" },
+	{ act_keyctl_reap,	"reap",		"[-v]" },
+	{ act_keyctl_reject,	"reject",	"<key> <timeout> <error> <keyring>" },
 	{ act_keyctl_request,	"request",	"<type> <desc> [<dest_keyring>]" },
 	{ act_keyctl_request2,	"request2",	"<type> <desc> <info> [<dest_keyring>]" },
-	{ act_keyctl_prequest2,	"prequest2",	"<type> <desc> [<dest_keyring>]" },
-	{ act_keyctl_update,	"update",	"<key> <data>" },
-	{ act_keyctl_pupdate,	"pupdate",	"<key>" },
-	{ act_keyctl_newring,	"newring",	"<name> <keyring>" },
 	{ act_keyctl_revoke,	"revoke",	"<key>" },
-	{ act_keyctl_clear,	"clear",	"<keyring>" },
-	{ act_keyctl_link,	"link",		"<key> <keyring>" },
-	{ act_keyctl_unlink,	"unlink",	"<key> [<keyring>]" },
-	{ act_keyctl_search,	"search",	"<keyring> <type> <desc> [<dest_keyring>]" },
-	{ act_keyctl_read,	"read",		"<key>" },
-	{ act_keyctl_pipe,	"pipe",		"<key>" },
-	{ act_keyctl_print,	"print",	"<key>" },
-	{ act_keyctl_list,	"list",		"<keyring>" },
 	{ act_keyctl_rlist,	"rlist",	"<keyring>" },
-	{ act_keyctl_describe,	"describe",	"<keyring>" },
-	{ act_keyctl_rdescribe,	"rdescribe",	"<keyring> [sep]" },
-	{ act_keyctl_chown,	"chown",	"<key> <uid>" },
-	{ act_keyctl_chgrp,	"chgrp",	"<key> <gid>" },
-	{ act_keyctl_setperm,	"setperm",	"<key> <mask>" },
-	{ act_keyctl_session,	"session",	"" },
-	{ act_keyctl_session,	"session",	"- [<prog> <arg1> <arg2> ...]" },
-	{ act_keyctl_session,	"session",	"<name> [<prog> <arg1> <arg2> ...]" },
-	{ act_keyctl_instantiate, "instantiate","<key> <data> <keyring>" },
-	{ act_keyctl_pinstantiate, "pinstantiate","<key> <keyring>" },
-	{ act_keyctl_negate,	"negate",	"<key> <timeout> <keyring>" },
-	{ act_keyctl_timeout,	"timeout",	"<key> <timeout>" },
+	{ act_keyctl_search,	"search",	"<keyring> <type> <desc> [<dest_keyring>]" },
 	{ act_keyctl_security,	"security",	"<key>" },
-	{ act_keyctl_new_session, "new_session",	"" },
-	{ act_keyctl_reject,	"reject",	"<key> <timeout> <error> <keyring>" },
-	{ act_keyctl_reap,	"reap",		"[-v]" },
-	{ act_keyctl_purge,	"purge",	"<type>" },
-	{ act_keyctl_purge,	"purge",	"[-p] [-i] <type> <desc>" },
-	{ act_keyctl_purge,	"purge",	"-s <type> <desc>" },
-	{ NULL, NULL, NULL }
+	{ act_keyctl_session,	"session",	"" },
+	{ NULL,			"session",	"- [<prog> <arg1> <arg2> ...]" },
+	{ NULL,			"session",	"<name> [<prog> <arg1> <arg2> ...]" },
+	{ act_keyctl_setperm,	"setperm",	"<key> <mask>" },
+	{ act_keyctl_show,	"show",		"" },
+	{ act_keyctl_timeout,	"timeout",	"<key> <timeout>" },
+	{ act_keyctl_unlink,	"unlink",	"<key> [<keyring>]" },
+	{ act_keyctl_update,	"update",	"<key> <data>" },
+	{ NULL,			NULL,		NULL }
 };
 
 static int dump_key_tree(key_serial_t keyring, const char *name);
@@ -144,7 +144,9 @@ int main(int argc, char *argv[])
 	best = NULL;
 	n = strlen(*argv);
 
-	for (cmd = commands; cmd->action; cmd++) {
+	for (cmd = commands; cmd->name; cmd++) {
+		if (!cmd->action)
+			continue;
 		if (memcmp(cmd->name, *argv, n) != 0)
 			continue;
 
@@ -198,7 +200,7 @@ static void format(void)
 
 	fprintf(stderr, "Format:\n");
 
-	for (cmd = commands; cmd->action; cmd++)
+	for (cmd = commands; cmd->name; cmd++)
 		fprintf(stderr, "  keyctl %s %s\n", cmd->name, cmd->format);
 
 	fprintf(stderr, "\n");
