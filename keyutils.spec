@@ -1,5 +1,5 @@
 %define vermajor 1
-%define verminor 5
+%define verminor 5.1
 %define version %{vermajor}.%{verminor}
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
@@ -9,7 +9,7 @@
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 2%{?dist}
+Release: 1%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux
@@ -92,7 +92,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
-* Tue Jul 19 2011 David Howells  <dhowells@redhat.com> - 1.5-2
+* Tue Jul 19 2011 David Howells  <dhowells@redhat.com> - 1.5.1-1
 - Fix unread variables.
 - Licence file update.
 
