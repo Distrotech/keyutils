@@ -94,6 +94,7 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Tue Jul 19 2011 David Howells  <dhowells@redhat.com> - 1.5-2
 - Fix unread variables.
+- Licence file update.
 
 * Thu Mar 10 2011 David Howells  <dhowells@redhat.com> - 1.5-1
 - Disable RPATH setting in Makefile.
