@@ -350,7 +350,7 @@ static int recursive_key_scan_aux(key_serial_t parent, key_serial_t key,
 	size_t ringlen;
 	void *ring;
 	char *desc, type[255];
-	int desc_len, uid, gid, ret, n, kcount = 0, is_keyring = 0;
+	int desc_len, uid, gid, ret, n, kcount = 0;
 
 	if (depth > 800)
 		return 0;
@@ -376,8 +376,6 @@ static int recursive_key_scan_aux(key_serial_t parent, key_serial_t key,
 	/* if it's a keyring then we're going to want to recursively search it
 	 * if we can */
 	if (strcmp(type, "keyring") == 0) {
-		is_keyring = 1;
-
 		/* read the keyring's contents */
 		ret = keyctl_read_alloc(key, &ring);
 		if (ret < 0)

@@ -9,7 +9,7 @@
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux
@@ -92,6 +92,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Tue Jul 19 2011 David Howells  <dhowells@redhat.com> - 1.5-2
+- Fix unread variables.
+
 * Thu Mar 10 2011 David Howells  <dhowells@redhat.com> - 1.5-1
 - Disable RPATH setting in Makefile.
 - Add -I. to build to get this keyutils.h.

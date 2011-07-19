@@ -640,9 +640,6 @@ int main(int argc, char *argv[])
 	char *keyend, *p;
 	char *callout_info = NULL;
 	char *buf = NULL, *name;
-	char hostbuf[NI_MAXHOST];
-
-	hostbuf[0] = '\0';
 
 	openlog(prog, 0, LOG_DAEMON);
 
