@@ -580,7 +580,7 @@ static void execute_program(char *op,
 
 		debug("%s %s\n", pipeit ? "PipeThru" : "Run", prog);
 		for (ap = argv; *ap; ap++)
-			debug("- argv[%zd] = \"%s\"\n", ap - argv, *ap);
+			debug("- argv[%td] = \"%s\"\n", ap - argv, *ap);
 	}
 
 	/* become the same UID/GID as the key requesting process */
@@ -838,7 +838,7 @@ static void pipe_to_program(char *op,
 	}
 
 	/* attempt to instantiate the key */
-	debug("instantiate with %zd bytes\n", pp - payload);
+	debug("instantiate with %td bytes\n", pp - payload);
 
 	if (keyctl_instantiate(key, payload, pp - payload, 0) < 0)
 		error("instantiate key failed: %m\n");
