@@ -1,5 +1,5 @@
 %define vermajor 1
-%define verminor 5.2
+%define verminor 5.3
 %define version %{vermajor}.%{verminor}
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
@@ -93,7 +93,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
-* Thu Aug 11 2011 David Howells  <dhowells@redhat.com>
+* Thu Aug 11 2011 David Howells  <dhowells@redhat.com> - 1.5.3-1
 - Make the keyutils rpm depend on the same keyutils-libs rpm version.
 
 * Tue Jul 26 2011 David Howells  <dhowells@redhat.com> - 1.5.2-1
