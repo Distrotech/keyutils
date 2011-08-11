@@ -19,6 +19,7 @@ Source0: http://people.redhat.com/~dhowells/keyutils/keyutils-%{version}.tar.bz2
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: glibc-kernheaders >= 2.4-9.1.92
+Requires: keyutils-libs == %{version}-%{release}
 
 %description
 Utilities to control the kernel key management facility and to provide
@@ -92,6 +93,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Thu Aug 11 2011 David Howells  <dhowells@redhat.com>
+- Make the keyutils rpm depend on the same keyutils-libs rpm version.
+
 * Tue Jul 26 2011 David Howells  <dhowells@redhat.com> - 1.5.2-1
 - Use correct format spec for printing pointer subtraction results.
 
