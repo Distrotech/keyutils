@@ -7,3 +7,4 @@
 keyctl
 request-key
 key.dns_resolver
+rpmbuild
