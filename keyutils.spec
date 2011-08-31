@@ -93,6 +93,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Wed Aug 14 2011 David Howells  <dhowells@redhat.com>
+- Adjust the manual page for 'keyctl unlink' to show keyring is optional.
+
 * Thu Aug 11 2011 David Howells  <dhowells@redhat.com> - 1.5.3-1
 - Make the keyutils rpm depend on the same keyutils-libs rpm version.
 
