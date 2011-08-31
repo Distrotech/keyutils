@@ -14,6 +14,9 @@
 
 #include <stdint.h>
 
+extern const char keyutils_version_string[];
+extern const char keyutils_build_string[];
+
 /* key serial number */
 typedef int32_t key_serial_t;
 

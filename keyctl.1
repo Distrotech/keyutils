@@ -11,6 +11,8 @@
 .SH NAME
 keyctl - Key management facility control
 .SH SYNOPSIS
+\fBkeyctl\fR --version
+.br
 \fBkeyctl\fR show
 .br
 \fBkeyctl\fR add <type> <desc> <data> <keyring>
@@ -137,6 +139,18 @@ permit it to access the callers keyrings and instantiate the target key.
 Any non-ambiguous shortening of a command name may be used in lieu of the full
 command name. This facility should not be used in scripting as new commands may
 be added in future that then cause ambiguity.
+.P
+(*) \fBDisplay the package version number\fR
+.P
+\fBkeyctl --version\fR
+.P
+This command prints the package version number and build date and exits:
+.P
+.RS
+testbox>keyctl --version
+.br
+keyctl from keyutils-1.5.3 (Built 2011-08-24)
+.RE
 .P
 (*) \fBShow process keyrings\fR
 .P

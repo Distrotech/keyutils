@@ -27,6 +27,7 @@ struct command {
 	const char	*format;
 };
 
+static int act_keyctl___version(int argc, char *argv[]);
 static int act_keyctl_show(int argc, char *argv[]);
 static int act_keyctl_add(int argc, char *argv[]);
 static int act_keyctl_padd(int argc, char *argv[]);
@@ -63,6 +64,7 @@ static int act_keyctl_reap(int argc, char *argv[]);
 static int act_keyctl_purge(int argc, char *argv[]);
 
 const struct command commands[] = {
+	{ act_keyctl___version,	"--version",	"" },
 	{ act_keyctl_add,	"add",		"<type> <desc> <data> <keyring>" },
 	{ act_keyctl_chgrp,	"chgrp",	"<key> <gid>" },
 	{ act_keyctl_chown,	"chown",	"<key> <uid>" },
@@ -220,6 +222,17 @@ static void format(void)
 	exit(2);
 
 } /* end format() */
+
+/*****************************************************************************/
+/*
+ * Display version information
+ */
+static int act_keyctl___version(int argc, char *argv[])
+{
+	printf("keyctl from %s (Built %s)\n",
+	       keyutils_version_string, keyutils_build_string);
+	return 0;
+}
 
 /*****************************************************************************/
 /*

@@ -130,6 +130,12 @@ int main(int argc, char *argv[])
 	char *ktype, *kdesc, *buf, *callout_info;
 	int ret, ntype, dpos, n, fd;
 
+	if (argc == 2 && strcmp(argv[1], "--version") == 0) {
+		printf("request-key from %s (Built %s)\n",
+		       keyutils_version_string, keyutils_build_string);
+		return 0;
+	}
+
 	signal(SIGSEGV, oops);
 	signal(SIGBUS, oops);
 	signal(SIGPIPE, SIG_IGN);

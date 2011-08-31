@@ -21,6 +21,9 @@
 #include <asm/unistd.h>
 #include "keyutils.h"
 
+const char keyutils_version_string[] = PKGVERSION;
+const char keyutils_build_string[] = PKGBUILD;
+
 #ifdef NO_GLIBC_KEYERR
 static int error_inited;
 static void (*libc_perror)(const char *msg);

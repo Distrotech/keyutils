@@ -1,5 +1,5 @@
 CPPFLAGS	:= -I.
-CFLAGS		:= $(CPPFLAGS) -g -Wall -Werror
+CFLAGS		:= -g -Wall -Werror
 INSTALL		:= install
 DESTDIR		:=
 SPECFILE	:= keyutils.spec
@@ -99,8 +99,12 @@ $(ARLIB): keyutils.o
 	$(AR) rcs $@ $<
 endif
 
+VCPPFLAGS	:= -DPKGBUILD="\"$(shell date -u +%F)\""
+VCPPFLAGS	+= -DPKGVERSION="\"keyutils-$(VERSION)\""
+VCPPFLAGS	+= -DAPIVERSION="\"libkeyutils-$(APIVERSION)\""
+
 keyutils.o: keyutils.c keyutils.h Makefile
-	$(CC) $(CPPFLAGS) $(CFLAGS) -UNO_GLIBC_KEYERR -o $@ -c $<
+	$(CC) $(CPPFLAGS) $(VCPPFLAGS) $(CFLAGS) -UNO_GLIBC_KEYERR -o $@ -c $<
 
 
 $(DEVELLIB): $(SONAME)
@@ -115,7 +119,7 @@ $(LIBNAME): keyutils.os version.lds Makefile
 	$(CC) $(CFLAGS) -fPIC $(LDFLAGS) $(LIBVERS) -o $@ keyutils.os $(LIBLIBS)
 
 keyutils.os: keyutils.c keyutils.h Makefile
-	$(CC) $(CFLAGS) -fPIC -o $@ -c $<
+	$(CC) $(CPPFLAGS) $(VCPPFLAGS) $(CFLAGS) -fPIC -o $@ -c $<
 
 ###############################################################################
 #

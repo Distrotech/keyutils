@@ -649,7 +649,10 @@ int main(int argc, char *argv[])
 			debug_mode = 1;
 			continue;
 		case 'V':
-			printf("version: %s\n", DNS_PARSE_VERSION);
+			printf("version: %s from %s (%s)\n",
+			       DNS_PARSE_VERSION,
+			       keyutils_version_string,
+			       keyutils_build_string);
 			exit(0);
 		case 'v':
 			verbose++;
