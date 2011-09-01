@@ -26,4 +26,18 @@ case `lsb_release -i | awk '{ print $3}'` in
     *)			OSDIST=Unknown;;
 esac
 
-OSVER=`lsb_release -r | awk '{ print $2}'`
+OSRELEASE=`lsb_release -r | awk '{ print $2}'`
+
+KEYUTILSVER=`keyctl --version 2>/dev/null`
+if [ -n "$KEYUTILSVER" ]
+then
+    :
+elif [ -x /bin/rpm ]
+then
+    KEYUTILSVER=`rpm -q keyutils`
+else
+    echo "Can't determine keyutils version" >&2
+    exit 9
+fi
+
+KEYUTILSVER=`expr $KEYUTILSVER : '.*keyutils-\([0-9.]*\).*'`
