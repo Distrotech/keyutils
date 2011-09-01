@@ -25,6 +25,12 @@ then
     marker "CHOWN"
     chown_key --fail $keyid 1
     expect_error EOPNOTSUPP
+elif [ `id -u` != 0 ]
+then
+    # must be running as root for this to work
+    marker "CHOWN"
+    chown_key --fail $keyid 1
+    expect_error EACCES
 else
     marker "CHOWN"
     chown_key $keyid 1
@@ -34,10 +40,17 @@ else
 fi
 
 # changing the key's group ownership is supported (change to "bin" group)
-marker "CHGRP"
-chgrp_key $keyid 1
-describe_key $keyid
-expect_key_rdesc rdesc "user@.*@1@[0-9a-f]*@lizard"
+if [ `id -u` != 0 ]
+then
+    marker "CHGRP"
+    chgrp_key --fail $keyid 1
+    expect_error EACCES
+else
+    marker "CHGRP"
+    chgrp_key $keyid 1
+    describe_key $keyid
+    expect_key_rdesc rdesc "user@.*@1@[0-9a-f]*@lizard"
+fi
 
 # check that each permission can be granted to the key
 marker "ITERATE PERMISSIONS"
