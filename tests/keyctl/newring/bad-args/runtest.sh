@@ -1,0 +1,42 @@
+#!/bin/sh
+
+. ../../../prepare.inc.sh
+. ../../../toolbox.inc.sh
+
+
+# ---- do the actual testing ----
+
+result=PASS
+echo "++++ BEGINNING TEST" >$OUTPUTFILE
+
+# check that an max length key description works correctly (4096 inc NUL)
+if [ $PAGE_SIZE -lt $maxsquota ]
+then
+    marker "CHECK MAXLEN DESC"
+    create_keyring $maxdesc @p
+    expect_keyid keyid
+else
+    marker "CHECK MAXLEN DESC FAILS WITH EDQUOT"
+    create_keyring --fail $maxdesc @p
+    expect_error EDQUOT
+fi
+
+# check that an overlong key description fails correctly (>4095 inc NUL)
+marker "CHECK OVERLONG DESC"
+create_keyring --fail a$maxdesc @p
+expect_error EINVAL
+
+# check that an empty keyring name fails
+marker "CHECK EMPTY KEYRING NAME"
+create_keyring --fail "" @p
+expect_error EINVAL
+
+# check that a bad key ID fails correctly
+marker "CHECK BAD KEY ID"
+create_keyring --fail wibble 0
+expect_error EINVAL
+
+echo "++++ FINISHED TEST: $result" >>$OUTPUTFILE
+
+# --- then report the results in the database ---
+toolbox_report_result $TEST $result
