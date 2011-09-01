@@ -14,7 +14,7 @@ if [ $OSDIST = RHEL -a $OSRELEASE -le 5 ]
 then
     marker "ANON SESSION"
     new_session - keyctl rdescribe @s "@"
-    expect_key_rdesc rdesc "keyring@.*@.*@.*@_ses.*"
+    expect_key_rdesc rdesc "keyring@.*@.*@.*@_ses[^@]*\$"
 
     # check the session keyring ID is shown
     seskeyring="`tail -2 $OUTPUTFILE | head -1`"
