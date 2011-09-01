@@ -13,9 +13,12 @@ echo "++++ BEGINNING TEST" >$OUTPUTFILE
 marker "NO ARGS"
 expect_args_error keyctl unlink
 
-# check that one argument fails correctly
-marker "ONE ARGS"
-expect_args_error keyctl unlink 0
+if keyutils_older_than 1.5
+then
+    # check that one argument fails correctly
+    marker "ONE ARGS"
+    expect_args_error keyctl unlink 0
+fi
 
 # check that three arguments fails correctly
 marker "THREE ARGS"

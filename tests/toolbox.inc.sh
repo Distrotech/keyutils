@@ -749,6 +749,31 @@ function unlink_key ()
 
 ###############################################################################
 #
+# extract a message about the number of keys unlinked
+#
+###############################################################################
+function expect_unlink_count ()
+{
+    my_varname=$1
+
+    my_nunlinks="`tail -1 $OUTPUTFILE`"
+
+    if ! expr "$my_nunlinks" : '^[0-9][0-9]* links removed$'
+    then
+	failed
+    fi
+
+    my_nunlinks=`echo $my_nunlinks | awk '{printf $1}'`
+    eval $my_varname="\"$my_nunlinks\""
+
+    if [ $# == 2 -a $my_nunlinks != $2 ]
+    then
+	failed
+    fi
+}
+
+###############################################################################
+#
 # update a key from a keyring
 #
 ###############################################################################
