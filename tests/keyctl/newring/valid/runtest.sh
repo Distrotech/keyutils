@@ -33,7 +33,7 @@ fi
 # the first should no longer exist in the session keyring
 marker "LIST SESSION KEYRING"
 list_keyring @s
-expect_keyring_rlist sessionrlist $keyringid
+expect_keyring_rlist sessionrlist $keyringid --absent
 
 # and should no longer be accessible
 marker "VALIDATE NEW KEYRING"

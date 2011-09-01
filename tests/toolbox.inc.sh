@@ -511,7 +511,7 @@ function expect_keyring_rlist ()
     my_rlist="`tail -1 $OUTPUTFILE`"
     eval $my_varname="\"$my_rlist\""
 
-    if [ $# = 2 ]
+    if [ $# = 2 -o $# = 3 ]
     then
 	if [ "$2" = "empty" ]
 	then
@@ -520,14 +520,23 @@ function expect_keyring_rlist ()
 		failed
 	    fi
 	else
+	    my_keyid=$2
 	    my_found=0
-	    case "$my_rlist" in
-		$my_keyid|*\ $my_keyid|*\ $my_keyid\ *|$my_keyid\ *)
-		    my_found=1
-		    ;;
-	    esac
+	    my_expected=1
+	    if [ $# = 3 -a "x$3" = "x--absent" ]; then my_expected=0; fi
 
-	    if [ $my_found == 0 ]
+	    for k in $my_rlist
+	    do
+		if [ $k = $my_keyid ]
+		then
+		    my_found=1
+		    break;
+		fi
+	    done
+
+	    echo f=$my_found x=$my_expected >>$OUTPUTFILE
+
+	    if [ $my_found != $my_expected ]
 	    then
 		failed
 	    fi
