@@ -47,7 +47,7 @@ marker "SET SMALL TIMEOUT"
 timeout_key $keyid 2
 
 marker "WAIT FOR TIMEOUT"
-sleep 2
+sleep_at_least 2
 
 # check the key has expired
 marker "CHECK NO READ PAYLOAD"
@@ -96,7 +96,7 @@ marker "TIMEOUT KEYRING"
 timeout_key $keyringid 1
 
 marker "WAIT FOR KEYRING TIMEOUT"
-sleep 1
+sleep_at_least 1
 
 # listing the session keyring should fail
 marker "CHECK NO LIST SESSION KEYRING"

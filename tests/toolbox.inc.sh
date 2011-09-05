@@ -1060,3 +1060,20 @@ function timeout_key ()
 	failed
     fi
 }
+
+###############################################################################
+#
+# Make sure we sleep at least N seconds
+#
+###############################################################################
+function sleep_at_least ()
+{
+    my_now=`date +%s`
+    my_done_at=$(($my_now+$1+1))
+    sleep $1
+    while [ `date +%s` -lt $my_done_at ]
+    do
+	# Sleep in 1/50th of a second bursts till the time catches up
+	sleep .02
+    done
+}
