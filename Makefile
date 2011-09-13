@@ -129,13 +129,13 @@ keyutils.os: keyutils.c keyutils.h Makefile
 %.o: %.c keyutils.h Makefile
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 
-keyctl: keyctl.o -lkeyutils
+keyctl: keyctl.o $(DEVELLIB)
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
-request-key: request-key.o -lkeyutils
+request-key: request-key.o $(DEVELLIB)
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
-key.dns_resolver: key.dns_resolver.o -lkeyutils
+key.dns_resolver: key.dns_resolver.o $(DEVELLIB)
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils -lresolv
 
 ###############################################################################
