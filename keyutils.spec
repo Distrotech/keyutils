@@ -93,6 +93,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Tue Nov 15 2011 David Howells  <dhowells@redhat.com>
+- Allow /sbin/request-key to have multiple config files.
+
 * Wed Aug 14 2011 David Howells  <dhowells@redhat.com>
 - Adjust the manual page for 'keyctl unlink' to show keyring is optional.
 - Add --version support for the keyutils version and build date.

@@ -7,7 +7,7 @@
 .\" as published by the Free Software Foundation; either version
 .\" 2 of the License, or (at your option) any later version.
 .\"
-.TH REQUEST-KEY 8 "17 Nov 2005" Linux "Linux Key Management Utilities"
+.TH REQUEST-KEY 8 "15 Nov 2011" Linux "Linux Key Management Utilities"
 .SH NAME
 request-key - Handle key instantiation callback requests from the kernel
 .SH SYNOPSIS
@@ -25,5 +25,10 @@ All errors will be logged to the syslog.
 /etc/request-key.conf
 .ul 0
 Instantiation handler configuration file.
+.P
+.ul
+/etc/request-key.d/<keytype>.conf
+.ul 0
+Keytype specific configuration file.
 .SH SEE ALSO
 \fBkeyctl\fR(1), \fBrequest-key.conf\fR(5)

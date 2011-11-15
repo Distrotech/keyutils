@@ -156,6 +156,7 @@ endif
 	$(INSTALL) -D request-key-debug.sh $(DESTDIR)$(SHAREDIR)/request-key-debug.sh
 	$(INSTALL) -D key.dns_resolver $(DESTDIR)$(SBINDIR)/key.dns_resolver
 	$(INSTALL) -D -m 0644 request-key.conf $(DESTDIR)$(ETCDIR)/request-key.conf
+	mkdir -p $(DESTDIR)$(ETCDIR)/request-key.d
 	$(INSTALL) -D -m 0644 keyctl.1 $(DESTDIR)$(MAN1)/keyctl.1
 	$(INSTALL) -D -m 0644 keyctl_chown.3 $(DESTDIR)$(MAN3)/keyctl_chown.3
 	$(INSTALL) -D -m 0644 keyctl_clear.3 $(DESTDIR)$(MAN3)/keyctl_clear.3

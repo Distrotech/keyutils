@@ -40,6 +40,7 @@ static char *xgid;
 static char *xthread_keyring;
 static char *xprocess_keyring;
 static char *xsession_keyring;
+static char conffile[256];
 static int confline;
 static int norecurse;
 
@@ -114,6 +115,9 @@ static void error(const char *fmt, ...)
 
 	exit(1);
 }
+
+#define file_error(FMT, ...)  error("%s: "FMT, conffile, ## __VA_ARGS__)
+#define line_error(FMT, ...)  error("%s:%d: "FMT, conffile, confline, ## __VA_ARGS__)
 
 static void oops(int x)
 {
@@ -262,21 +266,42 @@ static void lookup_action(char *op,
 	cilen = strlen(callout_info);
 
 	/* search the config file for a command to run */
-	conf = fopen(xdebug < 2 ? "/etc/request-key.conf" : "request-key.conf", "r");
+	if (strlen(ktype) <= sizeof(conffile) - 30) {
+		if (xdebug < 2)
+			snprintf(conffile, sizeof(conffile) - 1,
+				 "/etc/request-key.d/%s.conf", ktype);
+		else
+			snprintf(conffile, sizeof(conffile) - 1,
+				 "request-key.d/%s.conf", ktype);
+		conf = fopen(conffile, "r");
+		if (conf)
+			goto opened_conf_file;
+		if (errno != ENOENT)
+			error("Cannot open %s: %m\n", conffile);
+	}
+
+	if (xdebug < 2)
+		snprintf(conffile, sizeof(conffile) - 1, "/etc/request-key.conf");
+	else
+		snprintf(conffile, sizeof(conffile) - 1, "request-key.conf");
+	conf = fopen(conffile, "r");
 	if (!conf)
-		error("Cannot open /etc/request-key.conf: %m\n");
+		error("Cannot open %s: %m\n", conffile);
+
+opened_conf_file:
+	debug("Opened config file '%s'\n", conffile);
 
 	for (confline = 1;; confline++) {
 		/* read the file line-by-line */
 		if (!fgets(buf, sizeof(buf), conf)) {
 			if (feof(conf))
 				error("Cannot find command to construct key %d\n", key);
-			error("Error reading /etc/request-key.conf\n");
+			file_error("error %m\n");
 		}
 
 		len = strlen(buf);
 		if (len >= sizeof(buf) - 2)
-			error("/etc/request-key.conf:%d: Line too long\n", confline);
+			line_error("Line too long\n");
 
 		/* ignore blank lines and comments */
 		if (len == 1 || buf[0] == '#' || isspace(buf[0]))
@@ -345,7 +370,7 @@ static void lookup_action(char *op,
 
 		p++;
 
-		debug("Line %d matches\n", confline);
+		debug("%s:%d: Line matches\n", conffile, confline);
 
 		/* we've got an action */
 		while (isspace(*p)) p++;
@@ -357,10 +382,10 @@ static void lookup_action(char *op,
 		execute_program(op, key, ktype, kdesc, callout_info, p);
 	}
 
-	error("/etc/request-key.conf: No matching action\n");
+	file_error("No matching action\n");
 
 syntax_error:
-	error("/etc/request-key.conf:%d: Syntax error\n", confline);
+	line_error("Syntax error\n");
 
 } /* end lookup_action() */
 
@@ -457,7 +482,7 @@ static void execute_program(char *op,
 	prog = p = cmdline;
 	while (*p && !isspace(*p)) p++;
 //	if (!*p)
-//		error("/etc/request-key.conf:%d: No command path\n", confline);
+//		line_error("No command path\n");
 //	*p++ = 0;
 	if (*p)
 		*p++ = 0;
@@ -471,7 +496,7 @@ static void execute_program(char *op,
 			break;
 
 		if (argc >= 254)
-			error("/etc/request-key.conf:%d: Too many arguments\n", confline);
+			line_error("Too many arguments\n");
 		argv[argc] = q = p;
 
 		while (*p && !isspace(*p)) p++;
@@ -489,7 +514,7 @@ static void execute_program(char *op,
 		/* it's a macro */
 		q++;
 		if (!*q)
-			error("/etc/request-key.conf:%d: Missing macro name\n", confline);
+			line_error("Missing macro name\n");
 
 		if (*q == '%') {
 			/* it's actually an anti-macro escape "%%..." -> "%..." */
@@ -511,7 +536,7 @@ static void execute_program(char *op,
 			case 'P': argv[argc] = xprocess_keyring;	continue;
 			case 'S': argv[argc] = xsession_keyring;	continue;
 			default:
-				error("/etc/request-key.conf:%d: Unsupported macro\n", confline);
+				line_error("Unsupported macro\n");
 			}
 		}
 
@@ -526,50 +551,40 @@ static void execute_program(char *op,
 			q++;
 			ksdesc = strchr(q, ':');
 			if (!ksdesc)
-				error("/etc/request-key.conf:%d: Keysub macro lacks ':'\n",
-				      confline);
+				line_error("Keysub macro lacks ':'\n");
 			*ksdesc++ = 0;
 			end = strchr(ksdesc, '}');
 			if (!end)
-				error("/etc/request-key.conf:%d: Unterminated keysub macro\n",
-				      confline);
+				line_error("Unterminated keysub macro\n");
 
 			*end++ = 0;
 			if (*end)
-				error("/etc/request-key.conf:%d:"
-				      " Keysub macro has trailing rubbish\n",
-				      confline);
+				line_error("Keysub macro has trailing rubbish\n");
 
 			debug("Keysub: %s key \"%s\"\n", q, ksdesc);
 
 			if (!q[0])
-				error("/etc/request-key.conf:%d: Keysub type empty\n", confline);
+				line_error("Keysub type empty\n");
 
 			if (!ksdesc[0])
-				error("/etc/request-key.conf:%d: Keysub description empty\n",
-				      confline);
+				line_error("Keysub description empty\n");
 
 			/* look up the key in the requestor's keyrings, but fail immediately if the
 			 * key is not found rather than invoking /sbin/request-key again
 			 */
 			keysub = request_key(q, ksdesc, NULL, 0);
 			if (keysub < 0)
-				error("/etc/request-key.conf:%d:"
-				      " Keysub key not found: %m\n",
-				      confline);
+				line_error("Keysub key not found: %m\n");
 
 			ret = keyctl_read_alloc(keysub, &tmp);
 			if (ret < 0)
-				error("/etc/request-key.conf:%d:"
-				      " Can't read keysub %d data: %m\n",
-				      confline, keysub);
+				line_error("Can't read keysub %d data: %m\n", keysub);
 			subdata = tmp;
 
 			for (loop = 0; loop < ret; loop++)
 				if (!isprint(subdata[loop]))
-					error("/etc/request-key.conf:%d:"
-					      " keysub %d data not printable ('%02hhx')\n",
-					      confline, keysub, subdata[loop]);
+					error("keysub %d data not printable ('%02hhx')\n",
+					      keysub, subdata[loop]);
 
 			argv[argc] = subdata;
 			continue;
@@ -577,7 +592,7 @@ static void execute_program(char *op,
 	}
 
 	if (argc == 0)
-		error("/etc/request-key.conf:%d: No arguments\n", confline);
+		line_error("No arguments\n");
 
 	argv[argc] = NULL;
 
@@ -602,7 +617,7 @@ static void execute_program(char *op,
 	/* attempt to execute the command */
 	execv(prog, argv);
 
-	error("/etc/request-key.conf:%d: Failed to execute '%s': %m\n", confline, prog);
+	line_error("Failed to execute '%s': %m\n", prog);
 
 } /* end execute_program() */
 
@@ -646,7 +661,7 @@ static void pipe_to_program(char *op,
 		close(epi[1]);
 
 		execv(prog, argv);
-		error("/etc/request-key.conf:%d: Failed to execute '%s': %m\n", confline, prog);
+		line_error("Failed to execute '%s': %m\n", prog);
 	}
 
 	/* parent process */

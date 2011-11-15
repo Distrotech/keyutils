@@ -7,17 +7,22 @@
 .\" as published by the Free Software Foundation; either version
 .\" 2 of the License, or (at your option) any later version.
 .\"
-.TH REQUEST-KEY.CONF 5 "11 July 2005" Linux "Linux Key Management Utilities"
+.TH REQUEST-KEY.CONF 5 "15 November 2011" Linux "Linux Key Management Utilities"
 .SH NAME
 request-key.conf - Instantiation handler configuration file
 .SH DESCRIPTION
 .P
-This file is used by the /sbin/request-key program to determine which program
-it should run to instantiate a key.
+This file and its associated key-type specific variants are used by the
+/sbin/request-key program to determine which program it should run to
+instantiate a key.
 .P
-request-key works scans through the file a line at a time until it finds a
-match, which it will then use. If it doesn't find a match, it'll return an
-error and the kernel will automatically negate the key.
+request-key looks first in /etc/request-key.d/ for a file of the key type name
+plus ".conf" that it can use.  If that is not found, it will fall back to
+/etc/request-key.conf.
+.P
+request-key works scans through the chosen file one line at a time until it
+finds a match, which it will then use. If it doesn't find a match, it'll return
+an error and the kernel will automatically negate the key.
 .P
 Any blank line or line beginning with a hash mark '#' is considered to be a
 comment and ignored.
@@ -127,6 +132,10 @@ the payload.
 .SH FILES
 .ul
 /etc/request-key.conf
+.ul 0
+.br
+.ul
+/etc/request-key.d/<keytype>.conf
 .ul 0
 .SH SEE ALSO
 \fBkeyctl\fR(1), \fBrequest-key.conf\fR(5)
