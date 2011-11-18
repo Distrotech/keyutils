@@ -238,7 +238,7 @@ static int act_keyctl___version(int argc, char *argv[])
 /*
  * grab data from stdin
  */
-static char *grab_stdin(void)
+static char *grab_stdin(size_t *_size)
 {
 	static char input[65536 + 1];
 	int n, tmp;
@@ -262,6 +262,7 @@ static char *grab_stdin(void)
 	}
 
 	input[n] = '\0';
+	*_size = n;
 
 	return input;
 
@@ -357,19 +358,26 @@ static int act_keyctl_add(int argc, char *argv[])
  */
 static int act_keyctl_padd(int argc, char *argv[])
 {
-	char *args[6];
+	key_serial_t dest;
+	size_t datalen;
+	void *data;
+	int ret;
+
 
 	if (argc != 4)
 		format();
 
-	args[0] = argv[0];
-	args[1] = argv[1];
-	args[2] = argv[2];
-	args[3] = grab_stdin();
-	args[4] = argv[3];
-	args[5] = NULL;
+	dest = get_key_id(argv[3]);
 
-	return act_keyctl_add(5, args);
+	data = grab_stdin(&datalen);
+
+	ret = add_key(argv[1], argv[2], data, datalen, dest);
+	if (ret < 0)
+		error("add_key");
+
+	/* print the resulting key ID */
+	printf("%d\n", ret);
+	return 0;
 
 } /* end act_keyctl_padd() */
 
@@ -433,6 +441,7 @@ static int act_keyctl_request2(int argc, char *argv[])
 static int act_keyctl_prequest2(int argc, char *argv[])
 {
 	char *args[6];
+	size_t datalen;
 
 	if (argc != 3 && argc != 4)
 		format();
@@ -440,7 +449,7 @@ static int act_keyctl_prequest2(int argc, char *argv[])
 	args[0] = argv[0];
 	args[1] = argv[1];
 	args[2] = argv[2];
-	args[3] = grab_stdin();
+	args[3] = grab_stdin(&datalen);
 	args[4] = argv[3];
 	args[5] = NULL;
 
@@ -474,17 +483,20 @@ static int act_keyctl_update(int argc, char *argv[])
  */
 static int act_keyctl_pupdate(int argc, char *argv[])
 {
-	char *args[4];
+	key_serial_t key;
+	size_t datalen;
+	void *data;
 
 	if (argc != 2)
 		format();
 
-	args[0] = argv[0];
-	args[1] = argv[1];
-	args[2] = grab_stdin();
-	args[3] = NULL;
+	key = get_key_id(argv[1]);
+	data = grab_stdin(&datalen);
 
-	return act_keyctl_update(3, args);
+	if (keyctl_update(key, data, datalen) < 0)
+		error("keyctl_update");
+
+	return 0;
 
 } /* end act_keyctl_pupdate() */
 
@@ -1147,18 +1159,21 @@ static int act_keyctl_instantiate(int argc, char *argv[])
  */
 static int act_keyctl_pinstantiate(int argc, char *argv[])
 {
-	char *args[5];
+	key_serial_t key, dest;
+	size_t datalen;
+	void *data;
 
 	if (argc != 3)
 		format();
 
-	args[0] = argv[0];
-	args[1] = argv[1];
-	args[2] = grab_stdin();
-	args[3] = argv[2];
-	args[4] = NULL;
+	key = get_key_id(argv[1]);
+	dest = get_key_id(argv[2]);
+	data = grab_stdin(&datalen);
 
-	return act_keyctl_instantiate(4, args);
+	if (keyctl_instantiate(key, data, datalen, dest) < 0)
+		error("keyctl_instantiate");
+
+	return 0;
 
 } /* end act_keyctl_pinstantiate() */
 
