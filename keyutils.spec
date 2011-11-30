@@ -1,5 +1,5 @@
 %define vermajor 1
-%define verminor 5.3
+%define verminor 5.4
 %define version %{vermajor}.%{verminor}
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
@@ -95,6 +95,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Tue Nov 30 2011 David Howells <dhowells@redhat.com> - 1.5.4-1
+- Fix the keyctl padd command and similar to handle binary input.
+- Make keyctl show able to take a keyring to dump.
+- Make keyctl show able to take a flag to request hex key IDs.
+- Make keyctl show print the real ID of the root keyring.
+
 * Tue Nov 15 2011 David Howells <dhowells@redhat.com>
 - Allow /sbin/request-key to have multiple config files.
 
