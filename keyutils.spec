@@ -6,10 +6,12 @@
 %define libapivermajor 1
 %define libapiversion %{libapivermajor}.4
 
+# % define buildid .local
+
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 1%{?dist}
+Release: 1%{?dist}%{?buildid}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux

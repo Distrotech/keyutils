@@ -27,6 +27,8 @@ MAJOR		:= $(word 3,$(vermajor))
 MINOR		:= $(word 3,$(verminor))
 VERSION		:= $(MAJOR).$(MINOR)
 
+TARBALL		:= keyutils-$(VERSION).tar.bz2
+
 ###############################################################################
 #
 # Determine the current library version from the version script
@@ -216,28 +218,45 @@ distclean: clean
 # Generate a tarball
 #
 ###############################################################################
-TARBALL	:= keyutils-$(VERSION).tar.bz2
+$(TARBALL):
+	git archive --prefix=cachefilesd-$(VERSION)/ --format tar -o $(TARBALL) HEAD
+
+tarball: $(TARBALL)
+
+###############################################################################
+#
+# Generate an RPM
+#
+###############################################################################
 SRCBALL	:= rpmbuild/SOURCES/$(TARBALL)
 
+BUILDID	:= .local
 dist	:= $(word 2,$(shell grep "%dist" /etc/rpm/macros.dist))
 release	:= $(word 2,$(shell grep ^Release: $(SPECFILE)))
 release	:= $(subst %{?dist},$(dist),$(release))
+release	:= $(subst %{?buildid},$(BUILDID),$(release))
 rpmver	:= $(VERSION)-$(release)
 SRPM	:= rpmbuild/SRPMS/keyutils-$(rpmver).src.rpm
 
 RPMBUILDDIRS := \
-		--define "_srcrpmdir $(PWD)/rpmbuild/SRPMS" \
-		--define "_rpmdir $(PWD)/rpmbuild/RPMS" \
-		--define "_sourcedir $(PWD)/rpmbuild/SOURCES" \
-		--define "_specdir $(PWD)/rpmbuild/SPECS" \
-		--define "_builddir $(PWD)/rpmbuild/BUILD" \
-		--define "_buildrootdir $(PWD)/rpmbuild/BUILDROOT"
+		--define "_srcrpmdir $(CURDIR)/rpmbuild/SRPMS" \
+		--define "_rpmdir $(CURDIR)/rpmbuild/RPMS" \
+		--define "_sourcedir $(CURDIR)/rpmbuild/SOURCES" \
+		--define "_specdir $(CURDIR)/rpmbuild/SPECS" \
+		--define "_builddir $(CURDIR)/rpmbuild/BUILD" \
+		--define "_buildrootdir $(CURDIR)/rpmbuild/BUILDROOT"
+
+RPMFLAGS := \
+	--define "buildid $(BUILDID)"
 
 rpm:
 	mkdir -p rpmbuild/{SPECS,SOURCES,BUILD,BUILDROOT,RPMS,SRPMS}
 	git archive --prefix=keyutils-$(VERSION)/ --format tar -o $(SRCBALL) HEAD
-	rpmbuild -ts $(SRCBALL) --define "_srcrpmdir rpmbuild/SRPMS"
-	rpmbuild --rebuild $(SRPM) $(RPMBUILDDIRS)
+	rpmbuild -ts $(SRCBALL) --define "_srcrpmdir rpmbuild/SRPMS" $(RPMFLAGS)
+	rpmbuild --rebuild $(SRPM) $(RPMBUILDDIRS) $(RPMFLAGS)
+
+rpmlint: rpm
+	rpmlint $(SRPM) $(CURDIR)/rpmbuild/RPMS/*/keyutils-{,libs-,libs-devel-,debuginfo-}$(rpmver).*.rpm
 
 ###############################################################################
 #
