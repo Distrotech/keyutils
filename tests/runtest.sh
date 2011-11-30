@@ -12,9 +12,9 @@ fi
 
 for i in ${TESTS}; do
 	export TEST=$i
-        pushd $i
+        pushd $i >/dev/null
 	sh ./runtest.sh || exit 1
-	popd
+	popd >/dev/null
 done
 
 if [ `id -u` != 0 ]
