@@ -40,4 +40,4 @@ else
     exit 9
 fi
 
-KEYUTILSVER=`expr $KEYUTILSVER : '.*keyutils-\([0-9.]*\).*'`
+KEYUTILSVER=`expr "$KEYUTILSVER" : '.*keyutils-\([0-9.]*\).*'`
