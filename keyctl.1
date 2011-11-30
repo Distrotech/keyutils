@@ -13,7 +13,7 @@ keyctl - Key management facility control
 .SH SYNOPSIS
 \fBkeyctl\fR --version
 .br
-\fBkeyctl\fR show
+\fBkeyctl\fR show [-x] [<keyring>]
 .br
 \fBkeyctl\fR add <type> <desc> <data> <keyring>
 .br
@@ -154,10 +154,12 @@ keyctl from keyutils-1.5.3 (Built 2011-08-24)
 .P
 (*) \fBShow process keyrings\fR
 .P
-\fBkeyctl show\fR
+\fBkeyctl show [-x] [<keyring>]\fR
 .P
-This command recursively shows what keyrings a process is subscribed to and
-what keys and keyrings they contain.
+By default this command recursively shows what keyrings a process is subscribed
+to and what keys and keyrings they contain.  If a keyring is specified then
+that keyring will be dumped instead.  If \fB-x\fR is specified then the keyring
+IDs will be dumped in hex instead of decimal.
 .P
 (*) \fBAdd a key to a keyring\fR
 .P

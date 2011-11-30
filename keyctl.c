@@ -99,14 +99,14 @@ const struct command commands[] = {
 	{ NULL,			"session",	"- [<prog> <arg1> <arg2> ...]" },
 	{ NULL,			"session",	"<name> [<prog> <arg1> <arg2> ...]" },
 	{ act_keyctl_setperm,	"setperm",	"<key> <mask>" },
-	{ act_keyctl_show,	"show",		"" },
+	{ act_keyctl_show,	"show",		"[-x] [<keyring>]" },
 	{ act_keyctl_timeout,	"timeout",	"<key> <timeout>" },
 	{ act_keyctl_unlink,	"unlink",	"<key> [<keyring>]" },
 	{ act_keyctl_update,	"update",	"<key> <data>" },
 	{ NULL,			NULL,		NULL }
 };
 
-static int dump_key_tree(key_serial_t keyring, const char *name);
+static int dump_key_tree(key_serial_t keyring, const char *name, int hex_key_IDs);
 static void format(void) __attribute__((noreturn));
 static void error(const char *msg) __attribute__((noreturn));
 static key_serial_t get_key_id(const char *arg);
@@ -320,10 +320,22 @@ write_mask:
  */
 static int act_keyctl_show(int argc, char *argv[])
 {
-	if (argc != 1)
+	key_serial_t keyring = KEY_SPEC_SESSION_KEYRING;
+	int hex_key_IDs = 0;
+
+	if (argc >= 2 && strcmp(argv[1], "-x") == 0) {
+		hex_key_IDs = 1;
+		argc--;
+		argv++;
+	}
+
+	if (argc > 2)
 		format();
 
-	dump_key_tree(KEY_SPEC_SESSION_KEYRING, "Session Keyring");
+	if (argc == 2)
+		keyring = get_key_id(argv[1]);
+
+	dump_key_tree(keyring, argc == 2 ? "Keyring" : "Session Keyring", hex_key_IDs);
 	return 0;
 
 } /* end act_keyctl_show() */
@@ -1578,7 +1590,7 @@ static key_serial_t get_key_id(const char *arg)
 /*
  * recursively display a key/keyring tree
  */
-static int dump_key_tree_aux(key_serial_t key, int depth, int more)
+static int dump_key_tree_aux(key_serial_t key, int depth, int more, int hex_key_IDs)
 {
 	static char dumpindent[64];
 	key_serial_t *pk;
@@ -1632,13 +1644,22 @@ static int dump_key_tree_aux(key_serial_t key, int depth, int more)
 	/* and print */
 	calc_perms(pretty_mask, perm, uid, gid);
 
-	printf("%9d %s  %5d %5d  %s%s%s: %s\n",
-	       key,
-	       pretty_mask,
-	       uid, gid,
-	       dumpindent,
-	       depth > 0 ? "\\_ " : "",
-	       type, desc + dpos);
+	if (hex_key_IDs)
+		printf("0x%08x %s  %5d %5d  %s%s%s: %s\n",
+		       key,
+		       pretty_mask,
+		       uid, gid,
+		       dumpindent,
+		       depth > 0 ? "\\_ " : "",
+		       type, desc + dpos);
+	else
+		printf("%10d %s  %5d %5d  %s%s%s: %s\n",
+		       key,
+		       pretty_mask,
+		       uid, gid,
+		       dumpindent,
+		       depth > 0 ? "\\_ " : "",
+		       type, desc + dpos);
 
 	/* if it's a keyring then we're going to want to recursively
 	 * display it if we can */
@@ -1689,7 +1710,8 @@ static int dump_key_tree_aux(key_serial_t key, int depth, int more)
 
 				kcount += dump_key_tree_aux(key,
 							    rdepth,
-							    ringlen - 4 >= sizeof(key_serial_t));
+							    ringlen - 4 >= sizeof(key_serial_t),
+							    hex_key_IDs);
 			}
 
 		} while (ringlen -= 4, ringlen >= sizeof(key_serial_t));
@@ -1706,9 +1728,14 @@ static int dump_key_tree_aux(key_serial_t key, int depth, int more)
 /*
  * recursively list a keyring's contents
  */
-static int dump_key_tree(key_serial_t keyring, const char *name)
+static int dump_key_tree(key_serial_t keyring, const char *name, int hex_key_IDs)
 {
 	printf("%s\n", name);
-	return dump_key_tree_aux(keyring, 0, 0);
+
+	keyring = keyctl_get_keyring_ID(keyring, 0);
+	if (keyring == -1)
+		error("Unable to dump key");
+
+	return dump_key_tree_aux(keyring, 0, 0, hex_key_IDs);
 
 } /* end dump_key_tree() */
