@@ -219,7 +219,7 @@ distclean: clean
 #
 ###############################################################################
 $(TARBALL):
-	git archive --prefix=cachefilesd-$(VERSION)/ --format tar -o $(TARBALL) HEAD
+	git archive --prefix=keyutils-$(VERSION)/ --format tar -o $(TARBALL) HEAD
 
 tarball: $(TARBALL)
 
