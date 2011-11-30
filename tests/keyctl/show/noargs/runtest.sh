@@ -37,9 +37,9 @@ then
     failed
 fi
 
-# ... and it should be the session keyring (alias -3)
-keyring1id="`sed -n -e 4p $OUTPUTFILE | awk '{print $1}'`"
-if [ "$keyring1id" != "-3" ]
+# ... and it should be the session keyring
+keyring1name="`sed -n -e 4p $OUTPUTFILE | awk '{print $6}'`"
+if ! expr "$keyring1name" : "^RHTS/keyctl" >&/dev/null
 then
     failed
 fi
