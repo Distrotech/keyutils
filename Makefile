@@ -250,6 +250,8 @@ RPMFLAGS := \
 	--define "buildid $(BUILDID)"
 
 rpm:
+	mkdir -p rpmbuild
+	chmod ug-s rpmbuild
 	mkdir -p rpmbuild/{SPECS,SOURCES,BUILD,BUILDROOT,RPMS,SRPMS}
 	git archive --prefix=keyutils-$(VERSION)/ --format tar -o $(SRCBALL) HEAD
 	rpmbuild -ts $(SRCBALL) --define "_srcrpmdir rpmbuild/SRPMS" $(RPMFLAGS)

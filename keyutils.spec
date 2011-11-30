@@ -95,24 +95,24 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
-* Tue Nov 15 2011 David Howells  <dhowells@redhat.com>
+* Tue Nov 15 2011 David Howells <dhowells@redhat.com>
 - Allow /sbin/request-key to have multiple config files.
 
-* Wed Aug 14 2011 David Howells  <dhowells@redhat.com>
+* Wed Aug 14 2011 David Howells <dhowells@redhat.com>
 - Adjust the manual page for 'keyctl unlink' to show keyring is optional.
 - Add --version support for the keyutils version and build date.
 
-* Thu Aug 11 2011 David Howells  <dhowells@redhat.com> - 1.5.3-1
+* Thu Aug 11 2011 David Howells <dhowells@redhat.com> - 1.5.3-1
 - Make the keyutils rpm depend on the same keyutils-libs rpm version.
 
-* Tue Jul 26 2011 David Howells  <dhowells@redhat.com> - 1.5.2-1
+* Tue Jul 26 2011 David Howells <dhowells@redhat.com> - 1.5.2-1
 - Use correct format spec for printing pointer subtraction results.
 
-* Tue Jul 19 2011 David Howells  <dhowells@redhat.com> - 1.5.1-1
+* Tue Jul 19 2011 David Howells <dhowells@redhat.com> - 1.5.1-1
 - Fix unread variables.
 - Licence file update.
 
-* Thu Mar 10 2011 David Howells  <dhowells@redhat.com> - 1.5-1
+* Thu Mar 10 2011 David Howells <dhowells@redhat.com> - 1.5-1
 - Disable RPATH setting in Makefile.
 - Add -I. to build to get this keyutils.h.
 - Make CFLAGS override on make command line work right.
@@ -128,7 +128,7 @@ rm -rf $RPM_BUILD_ROOT
 - Handle multi-line commands in keyctl command table.
 - Move the package to version to 1.5.
 
-* Tue Mar 1 2011 David Howells  <dhowells@redhat.com> - 1.4-4
+* Tue Mar 1 2011 David Howells <dhowells@redhat.com> - 1.4-4
 - Make build guess at default libdirs and word size.
 - Make program build depend on library in Makefile.
 - Don't include $(DESTDIR) in MAN* macros.
@@ -140,19 +140,19 @@ rm -rf $RPM_BUILD_ROOT
 * Fri Dec 17 2010 Diego Elio Pettenò <flameeyes@hosting.flameeyes.eu> - 1.4-3
 - Fix local linking and RPATH.
 
-* Thu Jun 10 2010 David Howells  <dhowells@redhat.com> - 1.4-2
+* Thu Jun 10 2010 David Howells <dhowells@redhat.com> - 1.4-2
 - Fix prototypes in manual pages (some char* should be void*).
 - Rename the keyctl_security.3 manpage to keyctl_get_security.3.
 
-* Fri Mar 19 2010 David Howells  <dhowells@redhat.com> - 1.4-1
+* Fri Mar 19 2010 David Howells <dhowells@redhat.com> - 1.4-1
 - Fix the library naming wrt the version.
 - Move the package to version to 1.4.
 
-* Fri Mar 19 2010 David Howells  <dhowells@redhat.com> - 1.3-3
+* Fri Mar 19 2010 David Howells <dhowells@redhat.com> - 1.3-3
 - Fix spelling mistakes in manpages.
 - Add an index manpage for all the keyctl functions.
 
-* Thu Mar 11 2010 David Howells  <dhowells@redhat.com> - 1.3-2
+* Thu Mar 11 2010 David Howells <dhowells@redhat.com> - 1.3-2
 - Fix rpmlint warnings.
 
 * Fri Feb 26 2010 David Howells <dhowells@redhat.com> - 1.3-1
