@@ -62,6 +62,7 @@ static int act_keyctl_new_session(int argc, char *argv[]);
 static int act_keyctl_reject(int argc, char *argv[]);
 static int act_keyctl_reap(int argc, char *argv[]);
 static int act_keyctl_purge(int argc, char *argv[]);
+static int act_keyctl_invalidate(int argc, char *argv[]);
 
 const struct command commands[] = {
 	{ act_keyctl___version,	"--version",	"" },
@@ -71,6 +72,7 @@ const struct command commands[] = {
 	{ act_keyctl_clear,	"clear",	"<keyring>" },
 	{ act_keyctl_describe,	"describe",	"<keyring>" },
 	{ act_keyctl_instantiate, "instantiate","<key> <data> <keyring>" },
+	{ act_keyctl_invalidate,"invalidate",	"<key>" },
 	{ act_keyctl_link,	"link",		"<key> <keyring>" },
 	{ act_keyctl_list,	"list",		"<keyring>" },
 	{ act_keyctl_negate,	"negate",	"<key> <timeout> <keyring>" },
@@ -1549,6 +1551,25 @@ static int act_keyctl_purge(int argc, char *argv[])
 
 	n = recursive_session_key_scan(func, &purge);
 	printf("purged %d keys\n", n);
+	return 0;
+}
+
+/*****************************************************************************/
+/*
+ * Invalidate a key
+ */
+static int act_keyctl_invalidate(int argc, char *argv[])
+{
+	key_serial_t key;
+
+	if (argc != 2)
+		format();
+
+	key = get_key_id(argv[1]);
+
+	if (keyctl_invalidate(key) < 0)
+		error("keyctl_invalidate");
+
 	return 0;
 }
 

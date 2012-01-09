@@ -224,6 +224,11 @@ long keyctl_instantiate_iov(key_serial_t id,
 	return ret;
 }
 
+long keyctl_invalidate(key_serial_t id)
+{
+	return keyctl(KEYCTL_INVALIDATE, id);
+}
+
 /*****************************************************************************/
 /*
  * fetch key description into an allocated buffer
