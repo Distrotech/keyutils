@@ -35,6 +35,14 @@ maxcall=$maxdesc
 
 maxsquota=`grep '^ *0': /proc/key-users | sed s@.*/@@`
 
+key_gc_delay_file="/proc/sys/kernel/keys/gc_delay"
+if [ -f $key_gc_delay_file ]; then
+    orig_gc_delay=`cat $key_gc_delay_file`
+else
+    orig_gc_delay=300
+fi
+
+
 function marker ()
 {
     echo -e "+++ \e[33m$*\e[0m"
@@ -288,6 +296,7 @@ function pause_till_key_unlinked ()
 	then
 	    break
 	fi
+	sleep 1
     done
 }
 
@@ -1077,3 +1086,18 @@ function sleep_at_least ()
 	sleep .02
     done
 }
+
+###############################################################################
+#
+# set gc delay time, return original value
+#
+###############################################################################
+function set_gc_delay()
+{
+    delay=$1
+    if [ -f $key_gc_delay_file ]; then
+        echo $delay > $key_gc_delay_file
+        echo "Set $key_gc_delay_file to $delay, orig: $orig_gc_delay"
+    fi
+}
+

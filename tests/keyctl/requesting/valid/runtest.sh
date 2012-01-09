@@ -9,6 +9,8 @@
 result=PASS
 echo "++++ BEGINNING TEST" >$OUTPUTFILE
 
+set_gc_delay 10
+
 # create a pair of keyrings to play in
 marker "CREATE KEYRINGS"
 create_keyring "sandbox" @s
@@ -87,6 +89,8 @@ expect_error ENOKEY
 # remove the keyrings we added
 marker "UNLINK KEYRINGS"
 unlink_key $keyringid @s
+
+set_gc_delay $orig_gc_delay
 
 echo "++++ FINISHED TEST: $result" >>$OUTPUTFILE
 
