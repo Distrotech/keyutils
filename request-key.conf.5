@@ -20,7 +20,7 @@ request-key looks first in /etc/request-key.d/ for a file of the key type name
 plus ".conf" that it can use.  If that is not found, it will fall back to
 /etc/request-key.conf.
 .P
-request-key works scans through the chosen file one line at a time until it
+request-key scans through the chosen file one line at a time until it
 finds a match, which it will then use. If it doesn't find a match, it'll return
 an error and the kernel will automatically negate the key.
 .P
