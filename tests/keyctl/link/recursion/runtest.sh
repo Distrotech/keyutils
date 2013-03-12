@@ -13,6 +13,7 @@ echo "++++ BEGINNING TEST" >$OUTPUTFILE
 marker "CREATE KEYRING 1"
 create_keyring "first" @s
 expect_keyid keyringid
+set_key_perm $keyringid 0x3f3f0000
 
 # attempt to link a keyring to itself
 marker "RECURSE 1"
@@ -23,6 +24,7 @@ expect_error EDEADLK
 marker "CREATE KEYRING 2"
 create_keyring "second" $keyringid
 expect_keyid keyring2id
+set_key_perm $keyring2id 0x3f3f0000
 
 # attempt to link a keyring to its child keyring
 marker "RECURSE 2"
@@ -33,6 +35,7 @@ expect_error EDEADLK
 marker "CREATE KEYRING 3"
 create_keyring "third" $keyring2id
 expect_keyid keyring3id
+set_key_perm $keyring3id 0x3f3f0000
 
 # attempt to link a keyring to its grandchild keyring
 marker "RECURSE 3"
@@ -43,6 +46,7 @@ expect_error EDEADLK
 marker "CREATE KEYRING 4"
 create_keyring "fourth" $keyring3id
 expect_keyid keyring4id
+set_key_perm $keyring4id 0x3f3f0000
 
 # attempt to link a keyring to its great grandchild keyring
 marker "RECURSE 4"
@@ -53,6 +57,7 @@ expect_error EDEADLK
 marker "CREATE KEYRING 5"
 create_keyring "fifth" $keyring4id
 expect_keyid keyring5id
+set_key_perm $keyring5id 0x3f3f0000
 
 # attempt to link a keyring to its great great grandchild keyring
 marker "RECURSE 5"
@@ -63,6 +68,7 @@ expect_error EDEADLK
 marker "CREATE KEYRING 6"
 create_keyring "sixth" $keyring5id
 expect_keyid keyring6id
+set_key_perm $keyring6id 0x3f3f0000
 
 # attempt to link a keyring to its great great great grandchild keyring
 marker "RECURSE 6"
@@ -73,6 +79,7 @@ expect_error EDEADLK
 marker "CREATE KEYRING 7"
 create_keyring "seventh" $keyring6id
 expect_keyid keyring7id
+set_key_perm $keyring7id 0x3f3f0000
 
 # attempt to link a keyring to its great great great great grandchild keyring
 marker "RECURSE 7"
@@ -81,8 +88,11 @@ expect_error EDEADLK
 
 # create an eigth keyring in the seventh
 marker "CREATE KEYRING 8"
-create_keyring "eighth" $keyring7id
+create_keyring "eighth" @s
 expect_keyid keyring8id
+set_key_perm $keyring8id 0x3f3f0000
+link_key $keyring8id $keyring7id
+unlink_key $keyring8is @s
 
 # attempt to link a keyring to its great great great great great grandchild keyring
 marker "RECURSE 8"
@@ -93,6 +103,7 @@ expect_error EDEADLK
 marker "CREATE KEYRING 9"
 create_keyring "ninth" $keyring8id
 expect_keyid keyring9id
+set_key_perm $keyring9id 0x3f3f0000
 
 # attempt to link a keyring to its great great great great great great grandchild keyring
 marker "RECURSE 9"
