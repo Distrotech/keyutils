@@ -60,13 +60,12 @@ for ((i=0; i<20; i++))
   expect_keyring_rlist rlist $x
 done
 
-marker "CHECK KEYRING ORDERING"
+marker "CHECK KEYRING CONTENTS"
 list_keyring $keyringid
-expect_keyring_rlist rlist
-if [ "x$keys" != "x $rlist" ]
-then
-    failed
-fi
+for i in $keys
+do
+    expect_keyring_rlist rlist $i
+done
 
 marker "SHOW"
 if ! keyctl show >>$OUTPUTFILE 2>&1

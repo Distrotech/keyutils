@@ -543,8 +543,6 @@ function expect_keyring_rlist ()
 		fi
 	    done
 
-	    echo f=$my_found x=$my_expected >>$OUTPUTFILE
-
 	    if [ $my_found != $my_expected ]
 	    then
 		failed
