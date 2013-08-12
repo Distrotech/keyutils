@@ -161,7 +161,7 @@ expect_keyid found $keyid2
 # revoking the key should make the key unavailable
 revoke_key $keyid2
 search_for_key --fail $keyringid user lizard
-expect_error ENOKEY
+expect_error EKEYREVOKED
 
 # remove the keyrings we added
 marker "UNLINK KEYRING"
