@@ -242,7 +242,7 @@ static int act_keyctl___version(int argc, char *argv[])
  */
 static char *grab_stdin(size_t *_size)
 {
-	static char input[65536 + 1];
+	static char input[1024 * 1024 + 1];
 	int n, tmp;
 
 	n = 0;
