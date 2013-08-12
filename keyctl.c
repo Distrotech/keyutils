@@ -1621,7 +1621,7 @@ static int dump_key_tree_aux(key_serial_t key, int depth, int more, int hex_key_
 	char *desc, type[255], pretty_mask[9];
 	int uid, gid, ret, n, dpos, rdepth, kcount = 0;
 
-	if (depth > 8)
+	if (depth > 8 * 4)
 		return 0;
 
 	/* find out how big this key's description is */
