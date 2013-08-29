@@ -45,6 +45,7 @@ KEYUTILS_1.4 {
 	/* management functions */
 	keyctl_reject;
 	keyctl_instantiate_iov;
+	keyctl_invalidate;
 
 	/* utility functions */
 	recursive_key_scan;
