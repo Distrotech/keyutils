@@ -1,5 +1,5 @@
 %define vermajor 1
-%define verminor 5.5
+%define verminor 5.6
 %define version %{vermajor}.%{verminor}
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
@@ -11,7 +11,7 @@
 Summary: Linux Key Management Utilities
 Name: keyutils
 Version: %{version}
-Release: 1%{?dist}%{?buildid}
+Release: 1%{?buildid}%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Base
 ExclusiveOS: Linux
@@ -95,6 +95,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Thu Aug 29 2013 David Howells <dhowells@redhat.com> - 1.5.6-1
+- Fix the request-key.conf.5 manpage.
+- Fix the max depth of key tree dump (keyctl show).
+- The input buffer size for keyctl padd and pinstantiate should be larger.
+- Add keyctl_invalidate.3 manpage.
+
 * Wed Nov 30 2011 David Howells <dhowells@redhat.com> - 1.5.5-1
 - Fix a Makefile error.
 
