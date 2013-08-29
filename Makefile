@@ -161,6 +161,7 @@ endif
 	$(INSTALL) -D -m 0644 request-key.conf $(DESTDIR)$(ETCDIR)/request-key.conf
 	mkdir -p $(DESTDIR)$(ETCDIR)/request-key.d
 	$(INSTALL) -D -m 0644 keyctl.1 $(DESTDIR)$(MAN1)/keyctl.1
+	$(INSTALL) -D -m 0644 keyctl.3 $(DESTDIR)$(MAN3)/keyctl.3
 	$(INSTALL) -D -m 0644 keyctl_chown.3 $(DESTDIR)$(MAN3)/keyctl_chown.3
 	$(INSTALL) -D -m 0644 keyctl_clear.3 $(DESTDIR)$(MAN3)/keyctl_clear.3
 	$(INSTALL) -D -m 0644 keyctl_describe.3 $(DESTDIR)$(MAN3)/keyctl_describe.3
@@ -173,6 +174,7 @@ endif
 	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_reject.3
 	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_negate.3
 	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_assume_authority.3
+	$(INSTALL) -D -m 0644 keyctl_invalidate.3 $(DESTDIR)$(MAN3)/keyctl_invalidate.3
 	$(INSTALL) -D -m 0644 keyctl_join_session_keyring.3 $(DESTDIR)$(MAN3)/keyctl_join_session_keyring.3
 	$(INSTALL) -D -m 0644 keyctl_link.3 $(DESTDIR)$(MAN3)/keyctl_link.3
 	$(LNS) keyctl_link.3 $(DESTDIR)$(MAN3)/keyctl_unlink.3
@@ -180,6 +182,7 @@ endif
 	$(LNS) keyctl_read.3 $(DESTDIR)$(MAN3)/keyctl_read_alloc.3
 	$(INSTALL) -D -m 0644 keyctl_revoke.3 $(DESTDIR)$(MAN3)/keyctl_revoke.3
 	$(INSTALL) -D -m 0644 keyctl_search.3 $(DESTDIR)$(MAN3)/keyctl_search.3
+	$(INSTALL) -D -m 0644 keyctl_session_to_parent.3 $(DESTDIR)$(MAN3)/keyctl_session_to_parent.3
 	$(INSTALL) -D -m 0644 keyctl_setperm.3 $(DESTDIR)$(MAN3)/keyctl_setperm.3
 	$(INSTALL) -D -m 0644 keyctl_set_reqkey_keyring.3 $(DESTDIR)$(MAN3)/keyctl_set_reqkey_keyring.3
 	$(INSTALL) -D -m 0644 keyctl_set_timeout.3 $(DESTDIR)$(MAN3)/keyctl_set_timeout.3
