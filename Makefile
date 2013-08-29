@@ -27,7 +27,8 @@ MAJOR		:= $(word 3,$(vermajor))
 MINOR		:= $(word 3,$(verminor))
 VERSION		:= $(MAJOR).$(MINOR)
 
-TARBALL		:= keyutils-$(VERSION).tar.bz2
+TARBALL		:= keyutils-$(VERSION).tar
+ZTARBALL	:= $(TARBALL).bz2
 
 ###############################################################################
 #
@@ -218,10 +219,11 @@ distclean: clean
 # Generate a tarball
 #
 ###############################################################################
-$(TARBALL):
+$(ZTARBALL):
 	git archive --prefix=keyutils-$(VERSION)/ --format tar -o $(TARBALL) HEAD
+	bzip2 -9 $(TARBALL)
 
-tarball: $(TARBALL)
+tarball: $(ZTARBALL)
 
 ###############################################################################
 #
@@ -254,7 +256,8 @@ rpm:
 	chmod ug-s rpmbuild
 	mkdir -p rpmbuild/{SPECS,SOURCES,BUILD,BUILDROOT,RPMS,SRPMS}
 	git archive --prefix=keyutils-$(VERSION)/ --format tar -o $(SRCBALL) HEAD
-	rpmbuild -ts $(SRCBALL) --define "_srcrpmdir rpmbuild/SRPMS" $(RPMFLAGS)
+	bzip2 -9 $(SRCBALL)
+	rpmbuild -ts $(SRCBALL).bz2 --define "_srcrpmdir rpmbuild/SRPMS" $(RPMFLAGS)
 	rpmbuild --rebuild $(SRPM) $(RPMBUILDDIRS) $(RPMFLAGS)
 
 rpmlint: rpm
