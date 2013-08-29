@@ -95,10 +95,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
-* Tue Nov 30 2011 David Howells <dhowells@redhat.com> - 1.5.5-1
+* Wed Nov 30 2011 David Howells <dhowells@redhat.com> - 1.5.5-1
 - Fix a Makefile error.
 
-* Tue Nov 30 2011 David Howells <dhowells@redhat.com> - 1.5.4-1
+* Wed Nov 30 2011 David Howells <dhowells@redhat.com> - 1.5.4-1
 - Fix the keyctl padd command and similar to handle binary input.
 - Make keyctl show able to take a keyring to dump.
 - Make keyctl show able to take a flag to request hex key IDs.
@@ -107,7 +107,7 @@ rm -rf $RPM_BUILD_ROOT
 * Tue Nov 15 2011 David Howells <dhowells@redhat.com>
 - Allow /sbin/request-key to have multiple config files.
 
-* Wed Aug 14 2011 David Howells <dhowells@redhat.com>
+* Wed Aug 31 2011 David Howells <dhowells@redhat.com>
 - Adjust the manual page for 'keyctl unlink' to show keyring is optional.
 - Add --version support for the keyutils version and build date.
 
@@ -222,15 +222,15 @@ rm -rf $RPM_BUILD_ROOT
 * Wed Jul 20 2005 David Howells <dhowells@redhat.com> - 0.2-2
 - Bump version to permit building in main repositories.
 
-* Mon Jul 12 2005 David Howells <dhowells@redhat.com> - 0.2-1
+* Tue Jul 12 2005 David Howells <dhowells@redhat.com> - 0.2-1
 - Don't attempt to define the error codes in the header file.
 - Pass the release ID through to the makefile to affect the shared library name.
 
-* Mon Jul 12 2005 David Howells <dhowells@redhat.com> - 0.1-3
+* Tue Jul 12 2005 David Howells <dhowells@redhat.com> - 0.1-3
 - Build in the perror() override to get the key error strings displayed.
 
-* Mon Jul 12 2005 David Howells <dhowells@redhat.com> - 0.1-2
+* Tue Jul 12 2005 David Howells <dhowells@redhat.com> - 0.1-2
 - Need a defattr directive after each files directive.
 
-* Mon Jul 12 2005 David Howells <dhowells@redhat.com> - 0.1-1
+* Tue Jul 12 2005 David Howells <dhowells@redhat.com> - 0.1-1
 - Package creation.
