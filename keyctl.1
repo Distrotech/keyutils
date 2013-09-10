@@ -7,7 +7,7 @@
 .\" as published by the Free Software Foundation; either version
 .\" 2 of the License, or (at your option) any later version.
 .\"
-.TH KEYCTL 1 "17 Nov 2005" Linux "Linux Key Management Utilities"
+.TH KEYCTL 1 "10 Sep 2013" Linux "Linux Key Management Utilities"
 .SH NAME
 keyctl - Key management facility control
 .SH SYNOPSIS
@@ -135,6 +135,16 @@ implemented yet in the kernel.
 .P
 This selects the authorisation key provided to the request_key() helper to
 permit it to access the callers keyrings and instantiate the target key.
+.P
+(*) Keyring by name: \fB%:<name>\fR
+.P
+A named keyring.  This will be searched for in the process's keyrings and in
+/proc/keys.
+.P
+(*) Key by name: \fB%<type>:<name>\fR
+.P
+A named key of the given type.  This will be searched for in the process's
+keyrings and in /proc/keys.
 .SH COMMAND SYNTAX
 Any non-ambiguous shortening of a command name may be used in lieu of the full
 command name. This facility should not be used in scripting as new commands may

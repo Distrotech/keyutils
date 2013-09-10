@@ -111,7 +111,7 @@ const struct command commands[] = {
 static int dump_key_tree(key_serial_t keyring, const char *name, int hex_key_IDs);
 static void format(void) __attribute__((noreturn));
 static void error(const char *msg) __attribute__((noreturn));
-static key_serial_t get_key_id(const char *arg);
+static key_serial_t get_key_id(char *arg);
 
 static uid_t myuid;
 static gid_t mygid, *mygroups;
@@ -1577,7 +1577,7 @@ static int act_keyctl_invalidate(int argc, char *argv[])
 /*
  * parse a key identifier
  */
-static key_serial_t get_key_id(const char *arg)
+static key_serial_t get_key_id(char *arg)
 {
 	key_serial_t id;
 	char *end;
@@ -1596,6 +1596,36 @@ static key_serial_t get_key_id(const char *arg)
 		exit(2);
 	}
 
+	/* handle a lookup-by-name request "%<type>:<desc>", eg: "%keyring:_ses" */
+	if (arg[0] == '%') {
+		char *type;
+
+		arg++;
+		if (!*arg)
+			goto incorrect_key_by_name_spec;
+
+		if (*arg == ':') {
+			type = "keyring";
+			arg++;
+		} else {
+			type = arg;
+			arg = strchr(arg, ':');
+			if (!arg)
+				goto incorrect_key_by_name_spec;
+			*(arg++) = '\0';
+		}
+
+		if (!*arg)
+			goto incorrect_key_by_name_spec;
+
+		id = find_key_by_type_and_desc(type, arg, 0);
+		if (id == -1) {
+			fprintf(stderr, "Can't find '%s:%s'\n", type, arg);
+			exit(1);
+		}
+		return id;
+	}
+
 	/* handle a numeric key ID */
 	id = strtoul(arg, &end, 0);
 	if (*end) {
@@ -1604,6 +1634,10 @@ static key_serial_t get_key_id(const char *arg)
 	}
 
 	return id;
+
+incorrect_key_by_name_spec:
+	fprintf(stderr, "Incorrect key-by-name spec\n");
+	exit(2);
 
 } /* end get_key_id() */
 
