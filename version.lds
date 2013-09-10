@@ -50,5 +50,6 @@ KEYUTILS_1.4 {
 	/* utility functions */
 	recursive_key_scan;
 	recursive_session_key_scan;
+	find_key_by_type_and_desc;
 
 } KEYUTILS_1.3;

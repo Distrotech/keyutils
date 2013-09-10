@@ -162,5 +162,7 @@ typedef int (*recursive_key_scanner_t)(key_serial_t parent, key_serial_t key,
 				       char *desc, int desc_len, void *data);
 extern int recursive_key_scan(key_serial_t key, recursive_key_scanner_t func, void *data);
 extern int recursive_session_key_scan(recursive_key_scanner_t func, void *data);
+extern key_serial_t find_key_by_type_and_desc(const char *type, const char *desc,
+					      key_serial_t destringid);
 
 #endif /* KEYUTILS_H */
