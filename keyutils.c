@@ -229,6 +229,11 @@ long keyctl_invalidate(key_serial_t id)
 	return keyctl(KEYCTL_INVALIDATE, id);
 }
 
+long keyctl_get_persistent(uid_t uid, key_serial_t id)
+{
+	return keyctl(KEYCTL_GET_PERSISTENT, uid, id);
+}
+
 /*****************************************************************************/
 /*
  * fetch key description into an allocated buffer

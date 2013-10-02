@@ -97,6 +97,7 @@ typedef uint32_t key_perm_t;
 #define KEYCTL_REJECT			19	/* reject a partially constructed key */
 #define KEYCTL_INSTANTIATE_IOV		20	/* instantiate a partially constructed key */
 #define KEYCTL_INVALIDATE		21	/* invalidate a key */
+#define KEYCTL_GET_PERSISTENT		22	/* get a user's persistent keyring */
 
 /*
  * syscall wrappers
@@ -150,6 +151,7 @@ extern long keyctl_instantiate_iov(key_serial_t id,
 				   unsigned ioc,
 				   key_serial_t ringid);
 extern long keyctl_invalidate(key_serial_t id);
+extern long keyctl_get_persistent(uid_t uid, key_serial_t id);
 
 /*
  * utilities

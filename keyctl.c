@@ -63,6 +63,7 @@ static int act_keyctl_reject(int argc, char *argv[]);
 static int act_keyctl_reap(int argc, char *argv[]);
 static int act_keyctl_purge(int argc, char *argv[]);
 static int act_keyctl_invalidate(int argc, char *argv[]);
+static int act_keyctl_get_persistent(int argc, char *argv[]);
 
 const struct command commands[] = {
 	{ act_keyctl___version,	"--version",	"" },
@@ -73,6 +74,7 @@ const struct command commands[] = {
 	{ act_keyctl_describe,	"describe",	"<keyring>" },
 	{ act_keyctl_instantiate, "instantiate","<key> <data> <keyring>" },
 	{ act_keyctl_invalidate,"invalidate",	"<key>" },
+	{ act_keyctl_get_persistent, "get_persistent", "<keyring> [<uid>]" },
 	{ act_keyctl_link,	"link",		"<key> <keyring>" },
 	{ act_keyctl_list,	"list",		"<keyring>" },
 	{ act_keyctl_negate,	"negate",	"<key> <timeout> <keyring>" },
@@ -1570,6 +1572,38 @@ static int act_keyctl_invalidate(int argc, char *argv[])
 	if (keyctl_invalidate(key) < 0)
 		error("keyctl_invalidate");
 
+	return 0;
+}
+
+/*****************************************************************************/
+/*
+ * Get the per-UID persistent keyring
+ */
+static int act_keyctl_get_persistent(int argc, char *argv[])
+{
+	key_serial_t dest, ret;
+	uid_t uid = -1;
+	char *q;
+
+	if (argc != 2 && argc != 3)
+		format();
+
+	dest = get_key_id(argv[1]);
+
+	if (argc > 2) {
+		uid = strtoul(argv[2], &q, 0);
+		if (*q) {
+			fprintf(stderr, "Unparsable uid: '%s'\n", argv[2]);
+			exit(2);
+		}
+	}
+
+	ret = keyctl_get_persistent(uid, dest);
+	if (ret < 0)
+		error("keyctl_get_persistent");
+
+	/* print the resulting key ID */
+	printf("%d\n", ret);
 	return 0;
 }
 

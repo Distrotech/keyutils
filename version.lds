@@ -46,6 +46,7 @@ KEYUTILS_1.4 {
 	keyctl_reject;
 	keyctl_instantiate_iov;
 	keyctl_invalidate;
+	keyctl_get_persistent;
 
 	/* utility functions */
 	recursive_key_scan;
