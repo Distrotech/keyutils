@@ -1,5 +1,5 @@
 %define vermajor 1
-%define verminor 5.6
+%define verminor 5.7
 %define version %{vermajor}.%{verminor}
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
@@ -95,6 +95,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Wed Oct 2 2013 David Howells <dhowells@redhat.com> - 1.5.7-1
+- Provide a utility function to find a key by type and name.
+- Allow keyctl commands to take a type+name arg instead of a key-id arg.
+- Add per-UID get_persistent keyring function.
+
 * Thu Aug 29 2013 David Howells <dhowells@redhat.com> - 1.5.6-1
 - Fix the request-key.conf.5 manpage.
 - Fix the max depth of key tree dump (keyctl show).
