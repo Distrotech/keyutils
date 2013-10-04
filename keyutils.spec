@@ -1,5 +1,5 @@
 %define vermajor 1
-%define verminor 5.7
+%define verminor 5.8
 %define version %{vermajor}.%{verminor}
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
@@ -95,6 +95,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Fri Oct 4 2013 David Howells <dhowells@redhat.com> - 1.5.8-1
+- New lib symbols should go in a new library minor version.
+
 * Wed Oct 2 2013 David Howells <dhowells@redhat.com> - 1.5.7-1
 - Provide a utility function to find a key by type and name.
 - Allow keyctl commands to take a type+name arg instead of a key-id arg.
