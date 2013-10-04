@@ -4,7 +4,7 @@
 %define libdir /%{_lib}
 %define usrlibdir %{_prefix}/%{_lib}
 %define libapivermajor 1
-%define libapiversion %{libapivermajor}.4
+%define libapiversion %{libapivermajor}.5
 
 # % define buildid .local
 
