@@ -92,7 +92,7 @@ create_keyring "eighth" @s
 expect_keyid keyring8id
 set_key_perm $keyring8id 0x3f3f0000
 link_key $keyring8id $keyring7id
-unlink_key $keyring8is @s
+unlink_key $keyring8id @s
 
 # attempt to link a keyring to its great great great great great grandchild keyring
 marker "RECURSE 8"
