@@ -101,9 +101,11 @@ expect_error EDEADLK
 
 # create a ninth keyring in the eighth
 marker "CREATE KEYRING 9"
-create_keyring "ninth" $keyring8id
+create_keyring "ninth" @s
 expect_keyid keyring9id
 set_key_perm $keyring9id 0x3f3f0000
+link_key $keyring9id $keyring8id
+unlink_key $keyring9id @s
 
 # attempt to link a keyring to its great great great great great great grandchild keyring
 marker "RECURSE 9"
