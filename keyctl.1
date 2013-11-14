@@ -86,6 +86,12 @@ keyctl - Key management facility control
 \fBkeyctl\fR purge [-i] [-p] <type> <desc>
 .br
 \fBkeyctl\fR purge -s <type> <desc>
+.br
+\fBkeyctl\fR control [-r<size>] <key> <type> <cmd>
+.br
+\fBkeyctl\fR control -i [-r<size>] <key> <type> <cmd>
+.br
+\fBkeyctl\fR control [-r<size>] <key> <type> <cmd> <arg>
 .SH DESCRIPTION
 This program is used to control the key management facility in various ways
 using a variety of subcommands.
@@ -720,6 +726,27 @@ The third variant purges all keys of the specified type and matching
 description using the key type's comparator in the kernel to match the
 description.  This permits the key type to match a key with a variety of
 descriptions.
+.P
+(*) \fBControl or alter a key in a type-dependent fashion\fR
+.P
+\fBkeyctl\fR control [-r<size>] <key> <type> <cmd>
+.br
+\fBkeyctl\fR control -i [-r<size>] <key> <type> <cmd>
+.br
+\fBkeyctl\fR control [-r<size>] <key> <type> <cmd> <arg>
+.P
+This command performs a type-dependent operation upon the nominated key.  The
+key to be operated on is supplied as the first regular argument, then the
+expected key type name and then the name of the command.
+.P
+The three forms vary in how auxiliary argument data is supplied.  In the first
+form, there isn't any; in the second form it is read from stdin; and in the
+third form it is supplied on the command line.
+.P
+The -r flag is used to specify the size of the reply buffer, 0 indicates any
+reply should be ignored.  The reply is truncated to this size (1MB is the
+default if this is not given).  The reply is dumped directly to stdout and may
+contain binary data.
 .P
 .SH ERRORS
 .P

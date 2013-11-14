@@ -1,0 +1,102 @@
+.\"
+.\" Copyright (C) 2013 Red Hat, Inc. All Rights Reserved.
+.\" Written by David Howells (dhowells@redhat.com)
+.\"
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License
+.\" as published by the Free Software Foundation; either version
+.\" 2 of the License, or (at your option) any later version.
+.\"
+.TH KEYCTL_CONTROL 3 "14 Nov 2013" Linux "Linux Key Management Calls"
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH NAME
+keyctl_control \- Control or alter a key
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SYNOPSIS
+.nf
+.B #include <keyutils.h>
+.sp
+.BI "long keyctl_control(key_serial_t " key ", const char *" command ","
+.BI "                    char *" reply_buffer ", size_t " reply_buffer_size ");"
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH DESCRIPTION
+.BR keyctl_control ()
+allows the user to issue a key type-specific command that will in some way
+control or alter
+.IR key .
+.P
+The caller must have
+.B write
+permission on the key to perform this.
+.P
+The
+.B command
+argument is a printable string that begins with the name of the target type,
+then a space then the name of the operation to be performed, then optionally
+another space and argument data.  The command string, including the NUL
+terminator, may not exceed 1MB in size.
+.P
+The operation may return a reply in
+.B reply_buffer
+if that is not NULL.  The reply may be up to a maximum size of
+.B reply_buffer_size
+and will be truncated if it won't fit.  In any event, the reply may not exceed
+1MB in size.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH RETURN VALUE
+On success
+.BR keyctl_control ()
+returns the length of reply it would have liked to have returned (which may
+exceed
+.BR reply_buffer_size )
+and the (potentially truncated) reply will be placed in the
+.B reply_buffer
+(if supplied).
+.P
+On error, the value
+.B -1
+will be returned and errno will have been set to an appropriate error.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH ERRORS
+.TP
+.B ENOKEY
+The key specified is invalid.
+.TP
+.B EKEYEXPIRED
+The key specified has expired.
+.TP
+.B EKEYREVOKED
+The key specified had been revoked.
+.TP
+.B EACCES
+The key exists, but is not
+.B writable
+by the calling process.
+.TP
+.B EOPNOTSUPP
+The key type does not support the control operation.
+.P
+The key type may also return other errors in response to the command or may
+return success and place a reply that indicates an error in the
+.B reply_buffer
+as appropriate.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH LINKING
+This is a library function that can be found in
+.IR libkeyutils .
+When linking,
+.B -lkeyutils
+should be specified to the linker.
+.\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.SH SEE ALSO
+.BR keyctl (1),
+.br
+.BR add_key (2),
+.br
+.BR keyctl (2),
+.br
+.BR request_key (2),
+.br
+.BR keyctl (3),
+.br
+.BR request-key (8)

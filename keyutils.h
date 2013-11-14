@@ -98,6 +98,7 @@ typedef uint32_t key_perm_t;
 #define KEYCTL_INSTANTIATE_IOV		20	/* instantiate a partially constructed key */
 #define KEYCTL_INVALIDATE		21	/* invalidate a key */
 #define KEYCTL_GET_PERSISTENT		22	/* get a user's persistent keyring */
+#define KEYCTL_CONTROL			23	/* control/alter a key */
 
 /*
  * syscall wrappers
@@ -152,6 +153,10 @@ extern long keyctl_instantiate_iov(key_serial_t id,
 				   key_serial_t ringid);
 extern long keyctl_invalidate(key_serial_t id);
 extern long keyctl_get_persistent(uid_t uid, key_serial_t id);
+extern long keyctl_control(key_serial_t id,
+			   const char *command,
+			   char *reply_buffer,
+			   size_t reply_buffer_size);
 
 /*
  * utilities

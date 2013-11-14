@@ -61,3 +61,9 @@ KEYUTILS_1.5 {
 	find_key_by_type_and_desc;
 
 } KEYUTILS_1.4;
+
+KEYUTILS_1.6 {
+	/* management functions */
+	keyctl_control;
+
+} KEYUTILS_1.5;

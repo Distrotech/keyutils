@@ -64,6 +64,7 @@ static int act_keyctl_reap(int argc, char *argv[]);
 static int act_keyctl_purge(int argc, char *argv[]);
 static int act_keyctl_invalidate(int argc, char *argv[]);
 static int act_keyctl_get_persistent(int argc, char *argv[]);
+static int act_keyctl_control(int argc, char *argv[]);
 
 const struct command commands[] = {
 	{ act_keyctl___version,	"--version",	"" },
@@ -71,6 +72,7 @@ const struct command commands[] = {
 	{ act_keyctl_chgrp,	"chgrp",	"<key> <gid>" },
 	{ act_keyctl_chown,	"chown",	"<key> <uid>" },
 	{ act_keyctl_clear,	"clear",	"<keyring>" },
+	{ act_keyctl_control,	"control",	"[-i] [-r<N>] <key> <type> <cmd> [<args>]" },
 	{ act_keyctl_describe,	"describe",	"<keyring>" },
 	{ act_keyctl_instantiate, "instantiate","<key> <data> <keyring>" },
 	{ act_keyctl_invalidate,"invalidate",	"<key>" },
@@ -1605,6 +1607,112 @@ static int act_keyctl_get_persistent(int argc, char *argv[])
 	/* print the resulting key ID */
 	printf("%d\n", ret);
 	return 0;
+}
+
+/*****************************************************************************/
+/*
+ * Control a key
+ */
+static int act_keyctl_control(int argc, char *argv[])
+{
+	key_serial_t key;
+	size_t reply_buf_size = 1024 * 1024, tsz, csz, asz;
+	char *command, *reply_buf;
+	long ret;
+	int data_from_stdin = 0;
+
+again:
+	if (argc < 4)
+		format();
+
+	if (strcmp(argv[1], "-i") == 0) {
+		data_from_stdin = 1;
+		argc--;
+		argv++;
+		goto again;
+	}
+
+	if (strncmp(argv[1], "-r", 2) == 0) {
+		char *p;
+		reply_buf_size = strtoul(argv[1] + 2, &p, 0);
+		if (*p)
+			format();
+		argc--;
+		argv++;
+		goto again;
+	}
+
+	if (data_from_stdin) {
+		if (argc != 4)
+			format();
+	} else {
+		if (argc != 4 && argc != 5)
+			format();
+	}
+
+	tsz = strlen(argv[2]);
+	csz = strlen(argv[3]);
+	if (!tsz || !csz ||
+	    tsz >= 1024 * 1024 - 1 ||
+	    csz > 1024 * 1024 - (1 + tsz + 1))
+		goto cmd_limit;
+
+	if (memchr(argv[2], ' ', tsz) != NULL ||
+	    memchr(argv[3], ' ', csz) != NULL)
+		format();
+
+	if (argc == 5) {
+		asz = strlen(argv[4]);
+		if (asz > 1024 * 1024 - (1 + tsz + 1 + csz + 1))
+			goto cmd_limit;
+	}
+
+	key = get_key_id(argv[1]);
+
+	command = malloc(1024 * 1024);
+	if (!command)
+		error("malloc");
+
+	memcpy(command, argv[2], tsz);
+	command[tsz] = ' ';
+	memcpy(command + tsz + 1, argv[3], csz);
+	if (argc == 5) {
+		command[tsz + 1 + csz] = ' ';
+		memcpy(command + tsz + 1 + csz + 1, argv[4], asz);
+		command[tsz + 1 + csz + 1 + asz] = 0;
+	} else if (!data_from_stdin) {
+		command[tsz + 1 + csz] = 0;
+	} else {
+		size_t max = 1024 * 1024 - (1 + tsz + 1 + csz + 1);
+		asz = fread(command, 1, max + 1, stdin);
+		if (asz > max)
+			goto cmd_limit;
+		if (ferror(stdin))
+			error("stdin");
+		command[tsz + 1 + csz + 1 + asz] = 0;
+	}
+
+	reply_buf = (reply_buf_size > 0) ? command : NULL;
+
+	ret = keyctl_control(key, command, reply_buf, reply_buf_size);
+	if (ret < 0)
+		error("keyctl_control");
+
+	if (reply_buf_size > 0) {
+		if (ret > reply_buf_size && isatty(1)) {
+			fprintf(stderr, "Reply truncated (%zu -> %zu)\n",
+				ret, reply_buf_size);
+			ret = reply_buf_size;
+		}
+		if (fwrite(reply_buf, 1, ret, stdout) != ret)
+			error("stdout");
+	}
+
+	return 0;
+
+cmd_limit:
+	fprintf(stderr, "Type, command and argument strings limited to 1MB-1 in total\n");
+	exit(2);
 }
 
 /*****************************************************************************/
