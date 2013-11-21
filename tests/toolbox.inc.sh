@@ -10,6 +10,10 @@
 #
 ###############################################################################
 
+# Find the relative path from pwd to the directory holding this file
+includes=${BASH_SOURCE[0]}
+includes=${includes%/*}/
+
 echo === $OUTPUTFILE ===
 
 endian=`file -L /proc/$$/exe`
@@ -80,70 +84,7 @@ function toolbox_report_result()
     fi
 }
 
-###############################################################################
-#
-# compare version numbers to see if the first is less (older) than the second
-#
-###############################################################################
-function version_less_than ()
-{
-    a=$1
-    b=$2
-
-    if [ "$a" = "$b" ]
-    then
-	return 1
-    fi
-
-    # grab the leaders
-    x=${a%%-*}
-    y=${b%%-*}
-
-    if [ "$x" = "$a" -o "$y" = "$b" ]
-    then
-	if [ "$x" = "$y" ]
-	then
-	    [ "$x" = "$a" ]
-	else
-	    __version_less_than_dot "$x" "$y"
-	fi
-    elif [ "$x" = "$y" ]
-    then
-	less_than "${a#*-}" "${b#*-}"
-    else
-	__version_less_than_dot "$x" "$y"
-    fi
-}
-
-function __version_less_than_dot ()
-{
-    a=$1
-    b=$2
-
-    if [ "$a" = "$b" ]
-    then
-	return 1
-    fi
-
-    # grab the leaders
-    x=${a%%.*}
-    y=${b%%.*}
-
-    if [ "$x" = "$a" -o "$y" = "$b" ]
-    then
-	if [ "$x" = "$y" ]
-	then
-	    [ "$x" = "$a" ]
-	else
-	    expr "$x" \< "$y" >/dev/null
-	fi
-    elif [ "$x" = "$y" ]
-    then
-	__version_less_than_dot "${a#*.}" "${b#*.}"
-    else
-	expr "$x" \< "$y" >/dev/null
-    fi
-}
+. $includes/version.inc.sh
 
 ###############################################################################
 #
