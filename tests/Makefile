@@ -45,7 +45,7 @@ build: $(BUILT_FILES)
 
 clean:
 	rm -f *~ *.rpm $(BUILT_FILES)
-	find keyctl -name test.out -delete
+	find * -name test.out -delete
 
 # You may need to add other targets e.g. to build executables from source code
 # Add them here:
