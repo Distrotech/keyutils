@@ -360,6 +360,31 @@ function pcreate_key ()
 
 ###############################################################################
 #
+# create a key and attach it to the new keyring, piping in the data
+#
+###############################################################################
+function pcreate_key_by_size ()
+{
+    my_exitval=0
+    if [ "x$1" = "x--fail" ]
+    then
+	my_exitval=1
+	shift
+    fi
+
+    data="$1"
+    shift
+
+    echo dd if=/dev/zero count=1 bs=$data \| keyctl padd "$@" >>$OUTPUTFILE
+    dd if=/dev/zero count=1 bs=$data 2>/dev/null | keyctl padd "$@" >>$OUTPUTFILE 2>&1
+    if [ $? != $my_exitval ]
+    then
+	failed
+    fi
+}
+
+###############################################################################
+#
 # create a key and attach it to the new keyring
 #
 ###############################################################################
