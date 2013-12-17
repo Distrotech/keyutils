@@ -1036,6 +1036,28 @@ function timeout_key ()
 
 ###############################################################################
 #
+# Invalidate a key
+#
+###############################################################################
+function invalidate_key ()
+{
+    my_exitval=0
+    if [ "x$1" = "x--fail" ]
+    then
+	my_exitval=1
+	shift
+    fi
+
+    echo keyctl invalidate $1 >>$OUTPUTFILE
+    keyctl invalidate $1 >>$OUTPUTFILE 2>&1
+    if [ $? != $my_exitval ]
+    then
+	failed
+    fi
+}
+
+###############################################################################
+#
 # Make sure we sleep at least N seconds
 #
 ###############################################################################
