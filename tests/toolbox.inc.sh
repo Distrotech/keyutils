@@ -647,6 +647,28 @@ function pipe_key ()
 
 ###############################################################################
 #
+# pipe a key's raw payload through md5sum
+#
+###############################################################################
+function md5sum_key ()
+{
+    my_exitval=0
+    if [ "x$1" = "x--fail" ]
+    then
+	my_exitval=1
+	shift
+    fi
+
+    echo keyctl pipe $1 \| md5sum \| cut -c1-32 >>$OUTPUTFILE
+    keyctl pipe $1 | md5sum | cut -c1-32 >>$OUTPUTFILE 2>&1
+    if [ $? != $my_exitval ]
+    then
+	failed
+    fi
+}
+
+###############################################################################
+#
 # extract a printed payload from the log file
 #
 ###############################################################################
