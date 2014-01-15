@@ -1684,7 +1684,7 @@ static int dump_key_tree_aux(key_serial_t key, int depth, int more, int hex_key_
 	static char dumpindent[64];
 	key_serial_t *pk;
 	key_perm_t perm;
-	size_t ringlen, desclen;
+	size_t ringlen;
 	void *payload;
 	char *desc, type[255], pretty_mask[9];
 	int uid, gid, ret, n, dpos, rdepth, kcount = 0;
@@ -1692,29 +1692,12 @@ static int dump_key_tree_aux(key_serial_t key, int depth, int more, int hex_key_
 	if (depth > 8 * 4)
 		return 0;
 
-	/* find out how big this key's description is */
-	ret = keyctl_describe(key, NULL, 0);
-	if (ret < 0) {
-		printf("%d: key inaccessible (%m)\n", key);
-		return 0;
-	}
-	desclen = ret + 1;
-
-	desc = malloc(desclen);
-	if (!desc)
-		error("malloc");
-
 	/* read the description */
-	ret = keyctl_describe(key, desc, desclen);
+	ret = keyctl_describe_alloc(key, &desc);
 	if (ret < 0) {
 		printf("%d: key inaccessible (%m)\n", key);
-		free(desc);
 		return 0;
 	}
-
-	desclen = ret < desclen ? ret : desclen;
-
-	desc[desclen] = 0;
 
 	/* parse */
 	type[0] = 0;
