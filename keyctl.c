@@ -1735,6 +1735,8 @@ static int dump_key_tree_aux(key_serial_t key, int depth, int more, int hex_key_
 		       depth > 0 ? "\\_ " : "",
 		       type, desc + dpos);
 
+	free(desc);
+
 	/* if it's a keyring then we're going to want to recursively
 	 * display it if we can */
 	if (strcmp(type, "keyring") == 0) {
@@ -1793,7 +1795,6 @@ static int dump_key_tree_aux(key_serial_t key, int depth, int more, int hex_key_
 		free(payload);
 	}
 
-	free(desc);
 	return kcount;
 
 } /* end dump_key_tree_aux() */
