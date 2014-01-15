@@ -178,22 +178,6 @@ int main(int argc, char *argv[])
 		exit(2);
 	}
 
-	/* grab my UID, GID and groups */
-	myuid = geteuid();
-	mygid = getegid();
-	myngroups = getgroups(0, NULL);
-
-	if (myuid == -1 || mygid == -1 || myngroups == -1)
-		error("Unable to get UID/GID/#Groups\n");
-
-	mygroups = calloc(myngroups, sizeof(gid_t));
-	if (!mygroups)
-		error("calloc");
-
-	myngroups = getgroups(myngroups, mygroups);
-	if (myngroups < 0)
-		error("Unable to get Groups\n");
-
 	best->action(argc, argv);
 
 } /* end main() */
@@ -274,6 +258,34 @@ static char *grab_stdin(size_t *_size)
 
 } /* end grab_stdin() */
 
+/*
+ * Load the groups list and grab the process's UID and GID.
+ */
+static void grab_creds(void)
+{
+	static int inited;
+
+	if (inited)
+		return;
+	inited = 1;
+
+	/* grab my UID, GID and groups */
+	myuid = geteuid();
+	mygid = getegid();
+	myngroups = getgroups(0, NULL);
+
+	if (myuid == -1 || mygid == -1 || myngroups == -1)
+		error("Unable to get UID/GID/#Groups\n");
+
+	mygroups = calloc(myngroups, sizeof(gid_t));
+	if (!mygroups)
+		error("calloc");
+
+	myngroups = getgroups(myngroups, mygroups);
+	if (myngroups < 0)
+		error("Unable to get Groups\n");
+}
+
 /*****************************************************************************/
 /*
  * convert the permissions mask to a string representing the permissions we
@@ -284,6 +296,8 @@ static void calc_perms(char *pretty, key_perm_t perm, uid_t uid, gid_t gid)
 	unsigned perms;
 	gid_t *pg;
 	int loop;
+
+	grab_creds();
 
 	perms = (perm & KEY_POS_ALL) >> 24;
 
