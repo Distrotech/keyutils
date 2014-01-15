@@ -1,8 +1,6 @@
 %define vermajor 1
 %define verminor 5.8
 %define version %{vermajor}.%{verminor}
-%define libdir /%{_lib}
-%define usrlibdir %{_prefix}/%{_lib}
 %define libapivermajor 1
 %define libapiversion %{libapivermajor}.5
 
@@ -47,11 +45,19 @@ This package provides headers and libraries for building key utilities.
 %prep
 %setup -q
 
+%define datadir %{_datarootdir}/keyutils
+
 %build
 make \
 	NO_ARLIB=1 \
-	LIBDIR=%{libdir} \
-	USRLIBDIR=%{usrlibdir} \
+	ETCDIR=%{_sysconfdir} \
+	LIBDIR=%{_libdir} \
+	USRLIBDIR=%{_libdir} \
+	BINDIR=%{_bindir} \
+	SBINDIR=%{_sbindir} \
+	MANDIR=%{_mandir} \
+	INCLUDEDIR=%{_includedir} \
+	SHAREDIR=%{datadir} \
 	RELEASE=.%{release} \
 	NO_GLIBC_KEYERR=1 \
 	CFLAGS="-Wall $RPM_OPT_FLAGS -Werror"
@@ -61,8 +67,14 @@ rm -rf $RPM_BUILD_ROOT
 make \
 	NO_ARLIB=1 \
 	DESTDIR=$RPM_BUILD_ROOT \
-	LIBDIR=%{libdir} \
-	USRLIBDIR=%{usrlibdir} \
+	ETCDIR=%{_sysconfdir} \
+	LIBDIR=%{_libdir} \
+	USRLIBDIR=%{_libdir} \
+	BINDIR=%{_bindir} \
+	SBINDIR=%{_sbindir} \
+	MANDIR=%{_mandir} \
+	INCLUDEDIR=%{_includedir} \
+	SHAREDIR=%{datadir} \
 	install
 
 %clean
@@ -74,23 +86,23 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc README LICENCE.GPL
-/sbin/*
-/bin/*
-/usr/share/keyutils
+%{_sbindir}/*
+%{_bindir}/*
+%{datadir}
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man8/*
-%config(noreplace) /etc/*
+%config(noreplace) %{_sysconfdir}/*
 
 %files libs
 %defattr(-,root,root,-)
 %doc LICENCE.LGPL
-%{libdir}/libkeyutils.so.%{libapiversion}
-%{libdir}/libkeyutils.so.%{libapivermajor}
+%{_libdir}/libkeyutils.so.%{libapiversion}
+%{_libdir}/libkeyutils.so.%{libapivermajor}
 
 %files libs-devel
 %defattr(-,root,root,-)
-%{usrlibdir}/libkeyutils.so
+%{_libdir}/libkeyutils.so
 %{_includedir}/*
 %{_mandir}/man3/*
 

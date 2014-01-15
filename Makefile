@@ -9,10 +9,11 @@ ETCDIR		:= /etc
 BINDIR		:= /bin
 SBINDIR		:= /sbin
 SHAREDIR	:= /usr/share/keyutils
-MAN1		:= /usr/share/man/man1
-MAN3		:= /usr/share/man/man3
-MAN5		:= /usr/share/man/man5
-MAN8		:= /usr/share/man/man8
+MANDIR		:= /usr/share/man
+MAN1		:= $(MANDIR)/man1
+MAN3		:= $(MANDIR)/man3
+MAN5		:= $(MANDIR)/man5
+MAN8		:= $(MANDIR)/man8
 INCLUDEDIR	:= /usr/include
 LNS		:= ln -sf
 
@@ -52,12 +53,17 @@ LIBNAME		:= libkeyutils.so.$(APIVERSION)
 # Guess at the appropriate lib directory and word size
 #
 ###############################################################################
+ifeq ($(origin LIBDIR),undefined)
 LIBDIR		:= $(shell ldd /usr/bin/make | grep '\(/libc\)' | sed -e 's!.*\(/.*\)/libc[.].*!\1!')
+endif
+ifeq ($(origin USRLIBDIR),undefined)
 USRLIBDIR	:= $(patsubst /lib/%,/usr/lib/%,$(LIBDIR))
+endif
 BUILDFOR	:= $(shell file /usr/bin/make | sed -e 's!.*ELF \(32\|64\)-bit.*!\1!')-bit
 
 LNS		:= ln -sf
 
+ifeq ($(origin CFLAGS),undefined)
 ifeq ($(BUILDFOR),32-bit)
 CFLAGS		+= -m32
 LIBDIR		:= /lib
@@ -67,6 +73,7 @@ ifeq ($(BUILDFOR),64-bit)
 CFLAGS		+= -m64
 LIBDIR		:= /lib64
 USRLIBDIR	:= /usr/lib64
+endif
 endif
 endif
 
