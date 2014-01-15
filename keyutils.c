@@ -472,9 +472,10 @@ key_serial_t find_key_by_type_and_desc(const char *type, const char *desc,
 		if (*cp)
 			*cp = '\0';
 
+		ndesc = 0;
 		n = sscanf(buf, "%x %*s %*u %*s %*x %*d %*d %s %n",
 			   &id, typebuf, &ndesc);
-		if (n == 2) {
+		if (n == 2 && ndesc > 0 && ndesc <= cp - buf) {
 			if (strcmp(typebuf, type) != 0)
 				continue;
 			kdesc = buf + ndesc;
