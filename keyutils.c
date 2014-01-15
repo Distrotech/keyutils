@@ -110,7 +110,11 @@ long keyctl_setperm(key_serial_t id, key_perm_t perm)
 
 long keyctl_describe(key_serial_t id, char *buffer, size_t buflen)
 {
-	return keyctl(KEYCTL_DESCRIBE, id, buffer, buflen);
+	long ret = keyctl(KEYCTL_DESCRIBE, id, buffer, buflen);
+
+	if (ret == 0 || (ret > 0 && !buffer[ret - 1]))
+		abort();
+	return ret;
 }
 
 long keyctl_clear(key_serial_t ringid)
