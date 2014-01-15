@@ -256,8 +256,10 @@ int keyctl_describe_alloc(key_serial_t id, char **_buffer)
 
 	for (;;) {
 		ret = keyctl_describe(id, buf, buflen);
-		if (ret < 0)
+		if (ret < 0) {
+			free(buf);
 			return -1;
+		}
 
 		if (buflen >= ret)
 			break;
@@ -295,8 +297,10 @@ int keyctl_read_alloc(key_serial_t id, void **_buffer)
 
 	for (;;) {
 		ret = keyctl_read(id, buf, buflen);
-		if (ret < 0)
+		if (ret < 0) {
+			free(buf);
 			return -1;
+		}
 
 		if (buflen >= ret)
 			break;
@@ -335,8 +339,10 @@ int keyctl_get_security_alloc(key_serial_t id, char **_buffer)
 
 	for (;;) {
 		ret = keyctl_get_security(id, buf, buflen);
-		if (ret < 0)
+		if (ret < 0) {
+			free(buf);
 			return -1;
+		}
 
 		if (buflen >= ret)
 			break;
