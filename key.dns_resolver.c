@@ -69,17 +69,10 @@ static int debug_mode;
 
 
 #define	MAX_VLS			15	/* Max Volume Location Servers Per-Cell */
-#define DNS_EXPIRY_PREFIX	"expiry_time="
-#define DNS_EXPIRY_TIME_LEN	10 /* 2^32 - 1 = 4294967295 */
-#define AFSDB_MAX_DATA_LEN						\
-	((MAX_VLS * (INET6_ADDRSTRLEN + 1)) + sizeof(DNS_EXPIRY_PREFIX) + \
-	 DNS_EXPIRY_TIME_LEN + 1 /* '#'*/ + 1 /* end 0 */)
-
 #define	INET_IP4_ONLY		0x1
 #define	INET_IP6_ONLY		0x2
 #define	INET_ALL		0xFF
 #define ONE_ADDR_ONLY		0x100
-#define LIST_MULTIPLE_ADDRS	0x200
 
 /*
  * segmental payload
@@ -226,29 +219,33 @@ void debug(const char *fmt, ...)
 /*
  * Append an address to the payload segment list
  */
-static void append_address_to_payload(char *p, size_t sz)
+static void append_address_to_payload(const char *addr)
 {
+	size_t sz = strlen(addr);
+	char *copy;
 	int loop;
 
-	debug("append '%*.*s'", (int)sz, (int)sz, p);
+	debug("append '%s'", addr);
+
+	if (payload_index + 2 > N_PAYLOAD - 1)
+		return;
 
 	/* discard duplicates */
 	for (loop = 0; loop < payload_index; loop++)
 		if (payload[loop].iov_len == sz &&
-		    memcmp(payload[loop].iov_base, p, sz) == 0)
+		    memcmp(payload[loop].iov_base, addr, sz) == 0)
 			return;
+
+	copy = malloc(sz);
+	if (!copy)
+		error("%s: malloc: %m", __func__);
+	memcpy(copy, addr, sz);
 
 	if (payload_index != 0) {
-		if (payload_index + 2 > N_PAYLOAD - 1)
-			return;
 		payload[payload_index  ].iov_base = ",";
 		payload[payload_index++].iov_len = 1;
-	} else {
-		if (payload_index + 1 > N_PAYLOAD - 1)
-			return;
 	}
-
-	payload[payload_index  ].iov_base = p;
+	payload[payload_index  ].iov_base = copy;
 	payload[payload_index++].iov_len = sz;
 }
 
@@ -301,8 +298,7 @@ static int
 dns_resolver(const char *server_name, unsigned mask)
 {
 	struct addrinfo hints, *addr, *ai;
-	size_t slen;
-	char buf[INET6_ADDRSTRLEN + 1], *seg;
+	char buf[INET6_ADDRSTRLEN + 1];
 	int ret, len;
 	void *sa;
 
@@ -353,12 +349,7 @@ dns_resolver(const char *server_name, unsigned mask)
 		if (!inet_ntop(ai->ai_family, sa, buf, len))
 			error("%s: inet_ntop: %m", __func__);
 
-		slen = strlen(buf);
-		seg = malloc(slen);
-		if (!seg)
-			error("%s: inet_ntop: %m", __func__);
-		memcpy(seg, buf, slen);
-		append_address_to_payload(seg, slen);
+		append_address_to_payload(buf);
 		if (mask & ONE_ADDR_ONLY)
 			break;
 	}
@@ -370,13 +361,13 @@ dns_resolver(const char *server_name, unsigned mask)
 /*
  *
  */
-static void afsdb_hosts_to_addrs(char *vllist[],
-				 int *vlsnum,
-				 ns_msg handle,
+static void afsdb_hosts_to_addrs(ns_msg handle,
 				 ns_sect section,
 				 unsigned mask,
 				 unsigned long *_ttl)
 {
+	char *vllist[MAX_VLS];	/* list of name servers	*/
+	int vlsnum = 0;		/* number of name servers in list */
 	int rrnum;
 	ns_rr rr;
 	int subtype, i, ret;
@@ -394,8 +385,8 @@ static void afsdb_hosts_to_addrs(char *vllist[],
 
 		/* We're only interested in AFSDB records */
 		if (ns_rr_type(rr) == ns_t_afsdb) {
-			vllist[*vlsnum] = malloc(MAXDNAME);
-			if (!vllist[*vlsnum])
+			vllist[vlsnum] = malloc(MAXDNAME);
+			if (!vllist[vlsnum])
 				error("Out of memory");
 
 			subtype = ns_get16(ns_rr_rdata(rr));
@@ -404,7 +395,7 @@ static void afsdb_hosts_to_addrs(char *vllist[],
 			if (ns_name_uncompress(ns_msg_base(handle),
 					       ns_msg_end(handle),
 					       ns_rr_rdata(rr) + 2,
-					       vllist[*vlsnum],
+					       vllist[vlsnum],
 					       MAXDNAME) < 0)
 				error("ns_name_uncompress failed");
 
@@ -416,32 +407,32 @@ static void afsdb_hosts_to_addrs(char *vllist[],
 			 * the list of VL servers if it is not a duplicate.
 			 * If it is a duplicate, just ignore it.
 			 */
-			for (i = 0; i < *vlsnum; i++)
-				if (strcasecmp(vllist[i], vllist[*vlsnum]) == 0)
+			for (i = 0; i < vlsnum; i++)
+				if (strcasecmp(vllist[i], vllist[vlsnum]) == 0)
 					goto next_one;
 
 			/* Turn the hostname into IP addresses */
-			ret = dns_resolver(vllist[*vlsnum], mask);
+			ret = dns_resolver(vllist[vlsnum], mask);
 			if (ret) {
 				debug("AFSDB RR can't resolve."
 				      "subtype:%d, server name:%s, netmask:%u",
-				      subtype, vllist[*vlsnum], mask);
+				      subtype, vllist[vlsnum], mask);
 				goto next_one;
 			}
 
 			info("AFSDB RR subtype:%d, server name:%s, ip:%*.*s, ttl:%u",
-			     subtype, vllist[*vlsnum],
+			     subtype, vllist[vlsnum],
 			     (int)payload[payload_index - 1].iov_len,
 			     (int)payload[payload_index - 1].iov_len,
 			     (char *)payload[payload_index - 1].iov_base,
 			     ttl);
 
 			/* prepare for the next record */
-			*vlsnum += 1;
+			vlsnum++;
 			continue;
 
 		next_one:
-			free(vllist[*vlsnum]);
+			free(vllist[vlsnum]);
 		}
 	}
 
@@ -456,11 +447,9 @@ static void afsdb_hosts_to_addrs(char *vllist[],
  * request only IPv4 addresses and "ipv6" to request only IPv6 addresses.
  */
 static __attribute__((noreturn))
-int dns_query_afsdb(key_serial_t key, const char *cell, char *options)
+int dns_query_afsdb(const char *cell, char *options)
 {
 	int	ret;
-	char	*vllist[MAX_VLS];	/* list of name servers	*/
-	int	vlsnum = 0;		/* number of name servers in list */
 	unsigned mask = INET_ALL;
 	int	response_len;		/* buffer length */
 	ns_msg	handle;			/* handle for response message */
@@ -493,7 +482,7 @@ int dns_query_afsdb(key_serial_t key, const char *cell, char *options)
 		mask = INET_IP6_ONLY;
 
 	/* look up the hostnames we've obtained to get the actual addresses */
-	afsdb_hosts_to_addrs(vllist, &vlsnum, handle, ns_s_an, mask, &ttl);
+	afsdb_hosts_to_addrs(handle, ns_s_an, mask, &ttl);
 
 	info("DNS query AFSDB RR results:%u ttl:%lu", payload_index, ttl);
 
@@ -531,7 +520,7 @@ int dns_query_afsdb(key_serial_t key, const char *cell, char *options)
  * "list" to get multiple addresses.
  */
 static __attribute__((noreturn))
-int dns_query_a_or_aaaa(key_serial_t key, const char *hostname, char *options)
+int dns_query_a_or_aaaa(const char *hostname, char *options)
 {
 	unsigned mask;
 	int ret;
@@ -543,37 +532,36 @@ int dns_query_a_or_aaaa(key_serial_t key, const char *hostname, char *options)
 		/* legacy mode */
 		mask = INET_IP4_ONLY | ONE_ADDR_ONLY;
 	} else {
-		char *key, *val;
+		char *k, *val;
 
 		mask = INET_ALL | ONE_ADDR_ONLY;
 
 		do {
-			key = options;
+			k = options;
 			options = strchr(options, ' ');
 			if (!options)
-				options = key + strlen(key);
+				options = k + strlen(k);
 			else
 				*options++ = '\0';
-			if (!*key)
+			if (!*k)
 				continue;
-			if (strchr(key, ','))
-				error("Option name '%s' contains a comma", key);
+			if (strchr(k, ','))
+				error("Option name '%s' contains a comma", k);
 
-			val = strchr(key, '=');
+			val = strchr(k, '=');
 			if (val)
 				*val++ = '\0';
 
-			debug("Opt %s", key);
+			debug("Opt %s", k);
 
-			if (strcmp(key, "ipv4") == 0) {
+			if (strcmp(k, "ipv4") == 0) {
 				mask &= ~INET_ALL;
 				mask |= INET_IP4_ONLY;
-			} else if (strcmp(key, "ipv6") == 0) {
+			} else if (strcmp(k, "ipv6") == 0) {
 				mask &= ~INET_ALL;
 				mask |= INET_IP6_ONLY;
-			} else if (strcmp(key, "list") == 0) {
+			} else if (strcmp(k, "list") == 0) {
 				mask &= ~ONE_ADDR_ONLY;
-				mask |= LIST_MULTIPLE_ADDRS;
 			}
 
 		} while (*options);
@@ -619,8 +607,6 @@ void usage(void)
 	} else {
 		info("Usage: %s [-vv] key_serial", prog);
 	}
-	if (!debug_mode)
-		keyctl_negate(key, 1, KEY_REQKEY_DEFL_DEFAULT);
 	exit(2);
 }
 
@@ -672,25 +658,21 @@ int main(int argc, char *argv[])
 			usage();
 
 		/* get the key ID */
-		errno = 0;
-		key = strtol(*argv, NULL, 10);
-		if (errno != 0)
-			error("Invalid key ID format: %m");
+		if (!**argv)
+			error("Invalid blank key ID");
+		key = strtol(*argv, &p, 10);
+		if (*p)
+			error("Invalid key ID format");
 
 		/* get the key description (of the form "x;x;x;x;<query_type>:<name>") */
-		if (!buf) {
-			ret = keyctl_describe_alloc(key, &buf);
-			if (ret == -1)
-				error("keyctl_describe_alloc failed: %m");
-		}
+		ret = keyctl_describe_alloc(key, &buf);
+		if (ret == -1)
+			error("keyctl_describe_alloc failed: %m");
 
 		/* get the callout_info (which can supply options) */
-		if (!callout_info) {
-			ret = keyctl_read_alloc(KEY_SPEC_REQKEY_AUTH_KEY,
-						(void **)&callout_info);
-			if (ret == -1)
-				error("Invalid key callout_info read: %m");
-		}
+		ret = keyctl_read_alloc(KEY_SPEC_REQKEY_AUTH_KEY, (void **)&callout_info);
+		if (ret == -1)
+			error("Invalid key callout_info read: %m");
 	} else {
 		if (argc != 2)
 			usage();
@@ -725,7 +707,7 @@ int main(int argc, char *argv[])
 
 	name = index(keyend, ':');
 	if (!name)
-		dns_query_a_or_aaaa(key, keyend, callout_info);
+		dns_query_a_or_aaaa(keyend, callout_info);
 
 	qtlen = name - keyend;
 	name++;
@@ -737,7 +719,7 @@ int main(int argc, char *argv[])
 	    ) {
 		info("Do DNS query of A/AAAA type for:'%s' mask:'%s'",
 		     name, callout_info);
-		dns_query_a_or_aaaa(key, name, callout_info);
+		dns_query_a_or_aaaa(name, callout_info);
 	}
 
 	if (qtlen == sizeof(afsdb_query_type) - 1 &&
@@ -745,7 +727,7 @@ int main(int argc, char *argv[])
 	    ) {
 		info("Do DNS query of AFSDB type for:'%s' mask:'%s'",
 		     name, callout_info);
-		dns_query_afsdb(key, name, callout_info);
+		dns_query_afsdb(name, callout_info);
 	}
 
 	error("Query type: \"%*.*s\" is not supported", qtlen, qtlen, keyend);
