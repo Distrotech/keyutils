@@ -155,6 +155,8 @@ int main(int argc, char *argv[])
 	for (cmd = commands; cmd->name; cmd++) {
 		if (!cmd->action)
 			continue;
+		if (strlen(cmd->name) > n)
+			continue;
 		if (memcmp(cmd->name, *argv, n) != 0)
 			continue;
 
