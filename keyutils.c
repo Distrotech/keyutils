@@ -253,12 +253,12 @@ int keyctl_describe_alloc(key_serial_t id, char **_buffer)
 	if (ret < 0)
 		return -1;
 
-	buflen = ret;
-	buf = malloc(buflen);
-	if (!buf)
-		return -1;
-
 	for (;;) {
+		buflen = ret;
+		buf = malloc(buflen);
+		if (!buf)
+			return -1;
+
 		ret = keyctl_describe(id, buf, buflen);
 		if (ret < 0) {
 			free(buf);
@@ -267,17 +267,12 @@ int keyctl_describe_alloc(key_serial_t id, char **_buffer)
 
 		if (buflen >= ret)
 			break;
-
-		buflen = ret;
-		buf = realloc(buf, buflen);
-		if (!buf)
-			return -1;
+		free(buf);
 	}
 
 	*_buffer = buf;
-	return buflen - 1;
-
-} /* end keyctl_describe_alloc() */
+	return ret - 1;
+}
 
 /*****************************************************************************/
 /*
@@ -287,19 +282,19 @@ int keyctl_describe_alloc(key_serial_t id, char **_buffer)
  */
 int keyctl_read_alloc(key_serial_t id, void **_buffer)
 {
-	void *buf;
+	char *buf;
 	long buflen, ret;
 
 	ret = keyctl_read(id, NULL, 0);
 	if (ret < 0)
 		return -1;
 
-	buflen = ret;
-	buf = malloc(buflen + 1);
-	if (!buf)
-		return -1;
-
 	for (;;) {
+		buflen = ret;
+		buf = malloc(buflen + 1);
+		if (!buf)
+			return -1;
+
 		ret = keyctl_read(id, buf, buflen);
 		if (ret < 0) {
 			free(buf);
@@ -308,18 +303,13 @@ int keyctl_read_alloc(key_serial_t id, void **_buffer)
 
 		if (buflen >= ret)
 			break;
-
-		buflen = ret;
-		buf = realloc(buf, buflen + 1);
-		if (!buf)
-			return -1;
+		free(buf);
 	}
 
-	((unsigned char *) buf)[buflen] = 0;
+	buf[ret] = 0;
 	*_buffer = buf;
-	return buflen;
-
-} /* end keyctl_read_alloc() */
+	return ret;
+}
 
 /*****************************************************************************/
 /*
@@ -336,12 +326,12 @@ int keyctl_get_security_alloc(key_serial_t id, char **_buffer)
 	if (ret < 0)
 		return -1;
 
-	buflen = ret;
-	buf = malloc(buflen);
-	if (!buf)
-		return -1;
-
 	for (;;) {
+		buflen = ret;
+		buf = malloc(buflen);
+		if (!buf)
+			return -1;
+
 		ret = keyctl_get_security(id, buf, buflen);
 		if (ret < 0) {
 			free(buf);
@@ -350,15 +340,11 @@ int keyctl_get_security_alloc(key_serial_t id, char **_buffer)
 
 		if (buflen >= ret)
 			break;
-
-		buflen = ret;
-		buf = realloc(buf, buflen);
-		if (!buf)
-			return -1;
+		free(buf);
 	}
 
 	*_buffer = buf;
-	return buflen - 1;
+	return ret - 1;
 }
 
 /*
