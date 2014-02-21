@@ -1,5 +1,5 @@
 %define vermajor 1
-%define verminor 5.8
+%define verminor 5.9
 %define version %{vermajor}.%{verminor}
 %define libapivermajor 1
 %define libapiversion %{libapivermajor}.5
@@ -108,6 +108,22 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 
 %changelog
+* Fri Feb 21 2014 David Howells <dhowells@redhat.com> - 1.5.9-1
+- Add manpages for get_persistent.
+- Fix memory leaks in keyctl_describe/read/get_security_alloc().
+- Use keyctl_describe_alloc in dump_key_tree_aux rather than open coding it.
+- Exit rather than returning from act_xxx() functions.
+- Fix memory leak in dump_key_tree_aux.
+- Only get the groups list if we need it.
+- Don't trust sscanf's %n argument.
+- Use the correct path macros in the specfile.
+- Avoid use realloc when the memory has no content.
+- Fix a bunch of issues in key.dns_resolver.
+- Fix command table searching in keyctl utility.
+- Fix a typo in the permissions mask constants.
+- Improve the keyctl_read manpage.
+- Add man7 pages describing various keyrings concepts.
+
 * Fri Oct 4 2013 David Howells <dhowells@redhat.com> - 1.5.8-1
 - New lib symbols should go in a new library minor version.
 
@@ -160,7 +176,7 @@ rm -rf $RPM_BUILD_ROOT
 - Add recursive scan utility function.
 - Add bad key reap command to keyctl.
 - Add multi-unlink variant to keyctl unlink command.
-- Add multi key purger command to keyctl.
+- Add multi key purge command to keyctl.
 - Handle multi-line commands in keyctl command table.
 - Move the package to version to 1.5.
 
