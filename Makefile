@@ -13,6 +13,7 @@ MANDIR		:= /usr/share/man
 MAN1		:= $(MANDIR)/man1
 MAN3		:= $(MANDIR)/man3
 MAN5		:= $(MANDIR)/man5
+MAN7		:= $(MANDIR)/man7
 MAN8		:= $(MANDIR)/man8
 INCLUDEDIR	:= /usr/include
 LNS		:= ln -sf
@@ -173,6 +174,8 @@ endif
 	$(INSTALL) -m 0644 $(wildcard man/*.3) $(DESTDIR)$(MAN3)
 	mkdir -p $(DESTDIR)$(MAN5)
 	$(INSTALL) -m 0644 $(wildcard man/*.5) $(DESTDIR)$(MAN5)
+	mkdir -p $(DESTDIR)$(MAN7)
+	$(INSTALL) -m 0644 $(wildcard man/*.7) $(DESTDIR)$(MAN7)
 	mkdir -p $(DESTDIR)$(MAN8)
 	$(INSTALL) -m 0644 $(wildcard man/*.8) $(DESTDIR)$(MAN8)
 	$(LNS) keyctl_describe.3 $(DESTDIR)$(MAN3)/keyctl_describe_alloc.3

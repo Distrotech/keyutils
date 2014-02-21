@@ -7,7 +7,7 @@
 .\" as published by the Free Software Foundation; either version
 .\" 2 of the Licence, or (at your option) any later version.
 .\"
-.TH KEYCTL 3 "10 Sep 2013" Linux "Linux Key Management Calls"
+.TH KEYCTL 3 "21 Feb 2014" Linux "Linux Key Management Calls"
 .\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 .SH NAME
 keyctl_*() \- Key management function wrappers
@@ -18,7 +18,7 @@ The
 system call is a multiplexor for a number of key management functions.  These
 should be called via the wrappers in the libkeyutils library.
 .P
-The functions can be compiled in by including the keyutils header file:
+The functions can be compiled in by including the \fBkeyutils\fR header file:
 .sp
 .RS
 .nf
@@ -35,6 +35,8 @@ and then telling the linker it should link in the library:
 .SH KEYCTL FUNCTIONS
 .BR keyctl_assume_authority (3)
 .br
+.BR keyctl_chown (3)
+.br
 .BR keyctl_clear (3)
 .br
 .BR keyctl_describe (3)
@@ -44,6 +46,10 @@ and then telling the linker it should link in the library:
 .BR keyctl_get_keyring_ID (3)
 .br
 .BR keyctl_get_persistent (3)
+.br
+.BR keyctl_get_security (3)
+.br
+.BR keyctl_get_security_alloc (3)
 .br
 .BR keyctl_instantiate (3)
 .br
@@ -66,10 +72,6 @@ and then telling the linker it should link in the library:
 .BR keyctl_revoke (3)
 .br
 .BR keyctl_search (3)
-.br
-.BR keyctl_security (3)
-.br
-.BR keyctl_security_alloc (3)
 .br
 .BR keyctl_session_to_parent (3)
 .br
@@ -99,4 +101,6 @@ and then telling the linker it should link in the library:
 .br
 .BR request_key (2),
 .br
-.BR request-key (8)
+.BR keyutils (7),
+.br
+.BR keyrings (7)

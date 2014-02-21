@@ -7,10 +7,10 @@
 .\" as published by the Free Software Foundation; either version
 .\" 2 of the License, or (at your option) any later version.
 .\"
-.TH KEYCTL_GET_PERSISTENT 3 "21 Nov 2013" Linux "Linux Key Management Calls"
+.TH KEYCTL_GET_PERSISTENT 3 "20 Feb 2014" Linux "Linux Key Management Calls"
 .\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 .SH NAME
-keyctl_get_persistent \- Change the ownership of a key
+keyctl_get_persistent \- Get the persistent keyring for a user
 .\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 .SH SYNOPSIS
 .nf
@@ -110,4 +110,8 @@ should be specified to the linker.
 .br
 .BR keyctl (3),
 .br
-.BR request-key (8)
+.BR persistent-keyring (7),
+.br
+.BR keyutils (7),
+.br
+.BR keyrings (7)

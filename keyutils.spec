@@ -97,6 +97,7 @@ rm -rf $RPM_BUILD_ROOT
 %files libs
 %defattr(-,root,root,-)
 %doc LICENCE.LGPL
+%{_mandir}/man7/*
 %{_libdir}/libkeyutils.so.%{libapiversion}
 %{_libdir}/libkeyutils.so.%{libapivermajor}
 
