@@ -71,7 +71,7 @@ typedef uint32_t key_perm_t;
 #define KEY_OTH_WRITE	0x00000004
 #define KEY_OTH_SEARCH	0x00000008
 #define KEY_OTH_LINK	0x00000010
-#define KEY_OTH_SETATTR	0x00000010
+#define KEY_OTH_SETATTR	0x00000020
 #define KEY_OTH_ALL	0x0000003f
 
 /* keyctl commands */
