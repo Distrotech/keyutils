@@ -7,7 +7,7 @@
 .\" as published by the Free Software Foundation; either version
 .\" 2 of the License, or (at your option) any later version.
 .\"
-.TH KEYCTL_READ 3 "4 May 2006" Linux "Linux Key Management Calls"
+.TH KEYCTL_READ 3 "21 Feb 2014" Linux "Linux Key Management Calls"
 .\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 .SH NAME
 keyctl_read \- Read a key
@@ -33,16 +33,20 @@ permission on a key to be able to read it.
 and
 .I buflen
 specify the buffer into which the payload data will be placed.  If the buffer
-is too small, the full size of the payload will be returned, and no copy will
+is too small, the full size of the payload will be returned and no copy will
 take place.
 .P
 .BR keyctl_read_alloc ()
 is similar to
 .BR keyctl_read ()
 except that it allocates a buffer big enough to hold the payload data and
-places the data in it.  If successful, A pointer to the buffer is placed in
+places the data in it.  If successful, a pointer to the buffer is placed in
 .IR *_buffer .
 The caller must free the buffer.
+.P
+.BR keyctl_read_alloc ()
+adds a NUL character after the data it retrieves, though this is not counted
+in the size value it returns.
 .\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 .SH READING KEYRINGS
 This call can be used to list the contents of a keyring.  The data is
@@ -59,15 +63,14 @@ On success
 .BR keyctl_read ()
 returns the amount of data placed into the buffer.  If the buffer was too
 small, then the size of buffer required will be returned, but no data will be
-transferred.  On error, the value
-.B -1
-will be returned and errno will have been set to an appropriate error.
+transferred.
 .P
 On success
 .BR keyctl_read_alloc ()
-returns the amount of data in the buffer.  On error, the value
-.B -1
-will be returned and errno will have been set to an appropriate error.
+returns the amount of data in the buffer.
+.P
+On error, both functions set errno to an appropriate code and return the value
+.BR -1 .
 .\"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 .SH ERRORS
 .TP
