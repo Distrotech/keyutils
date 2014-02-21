@@ -167,38 +167,23 @@ endif
 	$(INSTALL) -D key.dns_resolver $(DESTDIR)$(SBINDIR)/key.dns_resolver
 	$(INSTALL) -D -m 0644 request-key.conf $(DESTDIR)$(ETCDIR)/request-key.conf
 	mkdir -p $(DESTDIR)$(ETCDIR)/request-key.d
-	$(INSTALL) -D -m 0644 keyctl.1 $(DESTDIR)$(MAN1)/keyctl.1
-	$(INSTALL) -D -m 0644 keyctl.3 $(DESTDIR)$(MAN3)/keyctl.3
-	$(INSTALL) -D -m 0644 keyctl_chown.3 $(DESTDIR)$(MAN3)/keyctl_chown.3
-	$(INSTALL) -D -m 0644 keyctl_clear.3 $(DESTDIR)$(MAN3)/keyctl_clear.3
-	$(INSTALL) -D -m 0644 keyctl_describe.3 $(DESTDIR)$(MAN3)/keyctl_describe.3
+	mkdir -p $(DESTDIR)$(MAN1)
+	$(INSTALL) -m 0644 $(wildcard man/*.1) $(DESTDIR)$(MAN1)
+	mkdir -p $(DESTDIR)$(MAN3)
+	$(INSTALL) -m 0644 $(wildcard man/*.3) $(DESTDIR)$(MAN3)
+	mkdir -p $(DESTDIR)$(MAN5)
+	$(INSTALL) -m 0644 $(wildcard man/*.5) $(DESTDIR)$(MAN5)
+	mkdir -p $(DESTDIR)$(MAN8)
+	$(INSTALL) -m 0644 $(wildcard man/*.8) $(DESTDIR)$(MAN8)
 	$(LNS) keyctl_describe.3 $(DESTDIR)$(MAN3)/keyctl_describe_alloc.3
-	$(INSTALL) -D -m 0644 keyctl_get_keyring_ID.3 $(DESTDIR)$(MAN3)/keyctl_get_keyring_ID.3
-	$(INSTALL) -D -m 0644 keyctl_get_security.3 $(DESTDIR)$(MAN3)/keyctl_get_security.3
 	$(LNS) keyctl_get_security.3 $(DESTDIR)$(MAN3)/keyctl_get_security_alloc.3
-	$(INSTALL) -D -m 0644 keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_instantiate.3
 	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_instantiate_iov.3
 	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_reject.3
 	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_negate.3
 	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_assume_authority.3
-	$(INSTALL) -D -m 0644 keyctl_invalidate.3 $(DESTDIR)$(MAN3)/keyctl_invalidate.3
-	$(INSTALL) -D -m 0644 keyctl_join_session_keyring.3 $(DESTDIR)$(MAN3)/keyctl_join_session_keyring.3
-	$(INSTALL) -D -m 0644 keyctl_link.3 $(DESTDIR)$(MAN3)/keyctl_link.3
 	$(LNS) keyctl_link.3 $(DESTDIR)$(MAN3)/keyctl_unlink.3
-	$(INSTALL) -D -m 0644 keyctl_read.3 $(DESTDIR)$(MAN3)/keyctl_read.3
 	$(LNS) keyctl_read.3 $(DESTDIR)$(MAN3)/keyctl_read_alloc.3
-	$(INSTALL) -D -m 0644 keyctl_revoke.3 $(DESTDIR)$(MAN3)/keyctl_revoke.3
-	$(INSTALL) -D -m 0644 keyctl_search.3 $(DESTDIR)$(MAN3)/keyctl_search.3
-	$(INSTALL) -D -m 0644 keyctl_session_to_parent.3 $(DESTDIR)$(MAN3)/keyctl_session_to_parent.3
-	$(INSTALL) -D -m 0644 keyctl_setperm.3 $(DESTDIR)$(MAN3)/keyctl_setperm.3
-	$(INSTALL) -D -m 0644 keyctl_set_reqkey_keyring.3 $(DESTDIR)$(MAN3)/keyctl_set_reqkey_keyring.3
-	$(INSTALL) -D -m 0644 keyctl_set_timeout.3 $(DESTDIR)$(MAN3)/keyctl_set_timeout.3
-	$(INSTALL) -D -m 0644 keyctl_update.3 $(DESTDIR)$(MAN3)/keyctl_update.3
-	$(INSTALL) -D -m 0644 recursive_key_scan.3 $(DESTDIR)$(MAN3)/recursive_key_scan.3
 	$(LNS) recursive_key_scan.3 $(DESTDIR)$(MAN3)/recursive_session_key_scan.3
-	$(INSTALL) -D -m 0644 request-key.conf.5 $(DESTDIR)$(MAN5)/request-key.conf.5
-	$(INSTALL) -D -m 0644 request-key.8 $(DESTDIR)$(MAN8)/request-key.8
-	$(INSTALL) -D -m 0644 key.dns_resolver.8 $(DESTDIR)$(MAN8)/key.dns_resolver.8
 	$(INSTALL) -D -m 0644 keyutils.h $(DESTDIR)$(INCLUDEDIR)/keyutils.h
 
 ###############################################################################
@@ -266,7 +251,7 @@ rpm:
 	chmod ug-s rpmbuild
 	mkdir -p rpmbuild/{SPECS,SOURCES,BUILD,BUILDROOT,RPMS,SRPMS}
 	git archive --prefix=keyutils-$(VERSION)/ --format tar -o $(SRCBALL) HEAD
-	bzip2 -9 $(SRCBALL)
+	bzip2 -9f $(SRCBALL)
 	rpmbuild -ts $(SRCBALL).bz2 --define "_srcrpmdir rpmbuild/SRPMS" $(RPMFLAGS)
 	rpmbuild --rebuild $(SRPM) $(RPMBUILDDIRS) $(RPMFLAGS)
 
