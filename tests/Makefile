@@ -52,7 +52,7 @@ clean:
 
 
 # Include Common Makefile
-ifneq ($(wild /usr/share/rhts/lib/rhts-make.include),)
+ifneq ($(wildcard /usr/share/rhts/lib/rhts-make.include),)
 include /usr/share/rhts/lib/rhts-make.include
 
 # Generate the testinfo.desc here:
@@ -70,6 +70,7 @@ $(METADATA): Makefile
 	@echo "Releases:     -RHEL2.1 -RHEL3" >> $(METADATA)
 	@echo "Type:         Tier1" >> $(METADATA)
 	@echo "Type:         KernelTier1" >> $(METADATA)
+	@echo "Destructive:  no" >> $(METADATA)
 	rhts-lint $(METADATA)
 
 endif

@@ -1108,4 +1108,3 @@ function set_gc_delay()
         echo "Set $key_gc_delay_file to $delay, orig: $orig_gc_delay"
     fi
 }
-
