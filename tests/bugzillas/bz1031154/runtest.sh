@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Test for https://bugzilla.redhat.com/show_bug.cgi?id=1031154
 

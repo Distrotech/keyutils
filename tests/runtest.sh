@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 TESTS=$*
 
@@ -13,7 +13,7 @@ fi
 for i in ${TESTS}; do
 	export TEST=$i
         pushd $i >/dev/null
-	sh ./runtest.sh || exit 1
+	bash ./runtest.sh || exit 1
 	popd >/dev/null
 done
 

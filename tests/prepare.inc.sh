@@ -4,7 +4,7 @@
 if [ "x`keyctl rdescribe @s | sed 's/.*;//'`" != "xRHTS/keyctl/$$" ]
 then
     echo "Running with session keyring RHTS/keyctl/$$"
-    exec keyctl session "RHTS/keyctl/$$" sh $0 $@ || exit 8
+    exec keyctl session "RHTS/keyctl/$$" bash $0 $@ || exit 8
 fi
 
 # Set up for the Red Hat Test System

@@ -39,7 +39,7 @@ FILES=$(METADATA) runtest.sh Makefile PURPOSE toolbox.inc.sh keyctl \
       prepare.inc.sh
 
 run: $(FILES) build
-	sh runtest.sh $(TESTS)
+	bash runtest.sh $(TESTS)
 
 build: $(BUILT_FILES)
 
