@@ -132,6 +132,25 @@ function keyutils_at_or_older_than ()
 
 ###############################################################################
 #
+# Return true if the command is found in $PATH. If not, log that the test is
+# being skipped, report the result as PASS, and exit.
+#
+###############################################################################
+function require_command ()
+{
+    which "$1" >&/dev/null
+    if [ $? != 0 ]
+    then
+        echo "++++ SKIPPING TEST" >>$OUTPUTFILE
+        marker "SKIP DUE TO MISSING COMMAND: $1"
+        toolbox_report_result $TEST PASS
+
+        exit 0
+    fi
+}
+
+###############################################################################
+#
 # extract an error message from the log file and check it
 #
 ###############################################################################

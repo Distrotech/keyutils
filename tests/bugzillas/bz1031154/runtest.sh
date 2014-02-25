@@ -9,6 +9,12 @@
 # ---- do the actual testing ----
 
 result=PASS
+
+require_command getenforce
+require_command setenforce
+require_command runcon
+require_command ausearch
+
 echo "++++ BEGINNING TEST" >$OUTPUTFILE
 
 # we need a reference time to scan the audit log from so as not to pick up old
