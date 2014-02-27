@@ -35,8 +35,7 @@ TESTS	= $(shell /usr/bin/find . -name runtest.sh | \
                   /bin/sed -e 's/runtest.sh//g;s/^\.\///;s/\/$$//')
 
 BUILT_FILES= 
-FILES=$(METADATA) runtest.sh Makefile PURPOSE toolbox.inc.sh keyctl \
-      prepare.inc.sh
+FILES=$(METADATA) *.sh Makefile PURPOSE bugzillas keyctl
 
 run: $(FILES) build
 	bash runtest.sh $(TESTS)
