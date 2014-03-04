@@ -54,24 +54,26 @@ then
 fi
 
 # check that shows of specified keyrings also work
-declare -i j
-j=$nr_keyrings
-for i in $keyrings
-do
-    marker "CHECK SHOW OTHERS $j"
-    echo --- $i >>$OUTPUTFILE
-    if ! keyctl show $i >>$OUTPUTFILE
-    then
-	failed
-    fi
-    k=`keyctl show $i | wc -l`
-    if [ $(($j + 1)) != $k ]
-    then
-	failed
-    fi
-    j=$(($j - 1))
-done
-
+if keyutils_at_or_later_than 1.5.4
+then
+    declare -i j
+    j=$nr_keyrings
+    for i in $keyrings
+    do
+	marker "CHECK SHOW OTHERS $j"
+	echo --- $i >>$OUTPUTFILE
+	if ! keyctl show $i >>$OUTPUTFILE
+	then
+	    failed
+	fi
+	k=`keyctl show $i | wc -l`
+	if [ $(($j + 1)) != $k ]
+	then
+	    failed
+	fi
+	j=$(($j - 1))
+    done
+fi
 echo "++++ FINISHED TEST: $result" >>$OUTPUTFILE
 
 # --- then report the results in the database ---
