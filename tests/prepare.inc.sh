@@ -68,3 +68,16 @@ then
 	    ;;
     esac
 fi
+
+#
+# Work out whether the big_key type is supported by the kernel
+#
+have_big_key_type=0
+if [ $OSDIST-$OSRELEASE = RHEL-7 ]
+then
+    # big_key is backported to 3.10 for RHEL-7
+    have_big_key_type=1
+elif kernel_at_or_later_than 3.13-rc1
+then
+    have_big_key_type=1
+fi

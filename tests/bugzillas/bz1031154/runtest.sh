@@ -10,6 +10,12 @@
 
 result=PASS
 
+if [ $have_big_key_type = 0 ]
+then
+    toolbox_skip_test $TEST "SKIPPING TEST DUE TO LACK OF BIG_KEY TYPE"
+    exit 0
+fi
+
 require_command getenforce
 require_command setenforce
 require_command runcon
