@@ -13,6 +13,7 @@ fi
 for i in ${TESTS}; do
 	export TEST=$i
         pushd $i >/dev/null
+	echo "### RUNNING TEST $i"
 	bash ./runtest.sh || exit 1
 	popd >/dev/null
 done
