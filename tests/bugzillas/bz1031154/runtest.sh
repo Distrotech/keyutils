@@ -10,6 +10,20 @@
 
 result=PASS
 
+kver=`uname -r`
+case $kver in
+    *.el7*)
+	# big_key is backported to 3.10 for RHEL-7
+	;;
+    *)
+	if version_less_than `uname -r` 3.13-rc1
+	then
+	    echo "++++ SKIPPING TEST" >$OUTPUTFILE
+	    exit 0;
+	fi
+	;;
+esac
+
 require_command getenforce
 require_command setenforce
 require_command runcon
