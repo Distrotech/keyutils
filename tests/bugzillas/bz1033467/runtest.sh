@@ -18,10 +18,11 @@ expect_keyid sandbox
 
 # create a bunch of nested keyrings in the sandbox
 marker "ADD NESTED KEYRINGS"
+declare -a ring
 for ((i=0; i<=16; i++))
 do
     create_keyring ring$i $sandbox
-    expect_keyid tmp
+    expect_keyid "ring[$i]"
 done
 
 # create a key in each of those keyrings
@@ -29,7 +30,7 @@ marker "ADD KEYS"
 keys=""
 for ((i=0; i<=16; i++))
 do
-    create_key user a$i a %:ring$i
+    create_key user a$i a ${ring[$i]}
     expect_keyid id
     keys="$keys $id"
 done
