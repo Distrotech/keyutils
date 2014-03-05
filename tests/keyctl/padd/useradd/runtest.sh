@@ -54,17 +54,20 @@ expect_keyid keyid
 md5sum_key $keyid
 expect_payload payload "f128f774ede3fe931e7c6745c4292f40"
 
-marker "ADD SMALL BIG KEY"
-pcreate_key_by_size 128 big_key small @s
-expect_keyid keyid
-md5sum_key $keyid
-expect_payload payload "f09f35a5637839458e462e6350ecbce4"
+if [ $have_big_key_type = 1 ]
+then
+    marker "ADD SMALL BIG KEY"
+    pcreate_key_by_size 128 big_key small @s
+    expect_keyid keyid
+    md5sum_key $keyid
+    expect_payload payload "f09f35a5637839458e462e6350ecbce4"
 
-marker "ADD HUGE BIG KEY"
-pcreate_key_by_size $((1024*1024-1)) big_key huge @s
-expect_keyid keyid
-md5sum_key $keyid
-expect_payload payload "e57598cd670284cf7d09e16ed9d4b2ac"
+    marker "ADD HUGE BIG KEY"
+    pcreate_key_by_size $((1024*1024-1)) big_key huge @s
+    expect_keyid keyid
+    md5sum_key $keyid
+    expect_payload payload "e57598cd670284cf7d09e16ed9d4b2ac"
+fi
 
 marker "CLEAR KEYRING"
 clear_keyring @s
