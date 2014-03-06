@@ -10,10 +10,6 @@
 #
 ###############################################################################
 
-# Find the relative path from pwd to the directory holding this file
-includes=${BASH_SOURCE[0]}
-includes=${includes%/*}/
-
 echo === $OUTPUTFILE ===
 
 endian=`file -L /proc/$$/exe`
@@ -84,7 +80,6 @@ function toolbox_report_result()
     fi
 }
 
-. $includes/version.inc.sh
 
 ###############################################################################
 #

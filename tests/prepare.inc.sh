@@ -1,5 +1,9 @@
 # preparation script for running keyring tests
 
+# Find the relative path from pwd to the directory holding this file
+includes=${BASH_SOURCE[0]}
+includes=${includes%/*}/
+
 # --- need to run in own session keyring
 if [ "x`keyctl rdescribe @s | sed 's/.*;//'`" != "xRHTS/keyctl/$$" ]
 then
@@ -41,3 +45,5 @@ else
 fi
 
 KEYUTILSVER=`expr "$KEYUTILSVER" : '.*keyutils-\([0-9.]*\).*'`
+
+. $includes/version.inc.sh
