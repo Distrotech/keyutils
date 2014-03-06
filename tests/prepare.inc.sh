@@ -49,3 +49,22 @@ KEYUTILSVER=`expr "$KEYUTILSVER" : '.*keyutils-\([0-9.]*\).*'`
 . $includes/version.inc.sh
 
 KERNELVER=`uname -r`
+
+#
+# Make sure the TEST envvar is set.
+#
+if [ -z "$TEST" ]
+then
+    p=`pwd`
+    case $p in
+	*/keyctl/*)
+	    TEST=keyctl/${p#*/keyctl/}
+	    ;;
+	*/bugzillas/*)
+	    TEST=bugzillas/${p#*/bugzillas/}
+	    ;;
+	*)
+	    TEST=unknown
+	    ;;
+    esac
+fi
