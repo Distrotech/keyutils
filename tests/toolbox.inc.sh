@@ -88,50 +88,6 @@ function toolbox_report_result()
 
 ###############################################################################
 #
-# Return true if the keyutils package being tested is older than the given
-# version.
-#
-###############################################################################
-function keyutils_older_than ()
-{
-    version_less_than $KEYUTILSVER $1
-}
-
-###############################################################################
-#
-# Return true if the keyutils package being tested is at or later than the
-# given version.
-#
-###############################################################################
-function keyutils_at_or_later_than ()
-{
-    ! keyutils_older_than $1
-}
-
-###############################################################################
-#
-# Return true if the keyutils package being tested is newer than the given
-# version.
-#
-###############################################################################
-function keyutils_newer_than ()
-{
-    version_less_than $1 $KEYUTILSVER
-}
-
-###############################################################################
-#
-# Return true if the keyutils package being tested is at or older than the
-# given version.
-#
-###############################################################################
-function keyutils_at_or_older_than ()
-{
-    ! keyutils_newer_than $1
-}
-
-###############################################################################
-#
 # Return true if the command is found in $PATH. If not, log that the test is
 # being skipped, report the result as PASS, and exit.
 #
