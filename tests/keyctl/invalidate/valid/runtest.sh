@@ -39,6 +39,9 @@ expect_keyring_rlist rlist $keyid
 marker "INVALIDATE KEY"
 invalidate_key $keyid
 
+# need to wait for the gc
+sleep 1
+
 # check that it's now empty again
 marker "LIST KEYRING 3"
 list_keyring $keyringid
