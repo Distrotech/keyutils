@@ -82,7 +82,7 @@ fi
 # Work out whether the big_key type is supported by the kernel
 #
 have_big_key_type=0
-if [ $OSDIST-$OSRELEASE = RHEL-7 ]
+if [ $OSDIST = RHEL ] && ! version_less_than $OSRELEASE 7
 then
     # big_key is backported to 3.10 for RHEL-7
     have_big_key_type=1
