@@ -72,9 +72,9 @@ function toolbox_report_result()
 {
     if [ $RUNNING_UNDER_RHTS = 1 ]
     then
-	report_result $TEST $result
+	report_result $1 $2
     fi
-    if [ $result = FAIL ]
+    if [ $2 = FAIL ]
     then
 	exit 1
     fi
