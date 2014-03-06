@@ -140,3 +140,23 @@ function keyutils_at_or_older_than ()
 {
     ! keyutils_newer_than $1
 }
+
+###############################################################################
+#
+# Return true if the kernel being tested is older than the given version.
+#
+###############################################################################
+function kernel_older_than ()
+{
+    version_less_than $KERNELVER $1
+}
+
+###############################################################################
+#
+# Return true if the kernel being tested is at or later than the given version.
+#
+###############################################################################
+function kernel_at_or_later_than ()
+{
+    ! kernel_older_than $1
+}

@@ -167,7 +167,7 @@ case $kver in
 	expect_error EKEYREVOKED
 	;;
     *)
-	if version_less_than `uname -r` 3.13
+	if kernel_older_than 3.13
 	then
 	    expect_error ENOKEY
 	else

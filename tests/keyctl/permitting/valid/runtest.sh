@@ -20,7 +20,7 @@ create_key user lizard gizzard $keyringid
 expect_keyid keyid
 
 # changing the key's ownership is not supported before 2.6.18-rc1
-if version_less_than `uname -r` 2.6.18
+if kernel_older_than 2.6.18
 then
     marker "CHOWN"
     chown_key --fail $keyid 1

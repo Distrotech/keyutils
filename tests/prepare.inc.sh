@@ -47,3 +47,5 @@ fi
 KEYUTILSVER=`expr "$KEYUTILSVER" : '.*keyutils-\([0-9.]*\).*'`
 
 . $includes/version.inc.sh
+
+KERNELVER=`uname -r`
