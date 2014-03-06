@@ -95,8 +95,8 @@ then
 
     echo "++++ FINISHED TEST: $result" >>$OUTPUTFILE
 else
-    echo "++++ SKIPPING TEST" >>$OUTPUTFILE
-    marker SKIP on version
+    toolbox_skip_test $TEST "SKIPPING TEST DUE TO LACK OF UNLINK-ALL"
+    exit 0
 fi
 
 # --- then report the results in the database ---

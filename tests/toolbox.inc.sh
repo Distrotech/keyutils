@@ -80,6 +80,12 @@ function toolbox_report_result()
     fi
 }
 
+function toolbox_skip_test()
+{
+    echo "++++ SKIPPING TEST" >>$OUTPUTFILE
+    marker "$2"
+    toolbox_report_result $1 PASS
+}
 
 ###############################################################################
 #
@@ -92,10 +98,7 @@ function require_command ()
     which "$1" >&/dev/null
     if [ $? != 0 ]
     then
-        echo "++++ SKIPPING TEST" >>$OUTPUTFILE
-        marker "SKIP DUE TO MISSING COMMAND: $1"
-        toolbox_report_result $TEST PASS
-
+	toolbox_skip_test "SKIP DUE TO MISSING COMMAND: $1"
         exit 0
     fi
 }
