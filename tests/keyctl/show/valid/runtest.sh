@@ -30,27 +30,31 @@ then
     failed
 fi
 
-# should be eight lines in the output (banner + session + 6 keyrings)
-marker "COUNT LINES"
-nlines=`keyctl show | wc -l`
-if [ "$nlines" -ne $(($nr_keyrings + 2)) ]
+if [ $OSDIST = RHEL ] && ! version_less_than $OSRELEASE 6.6 ||
+   keyutils_at_or_later_than 1.5.6
 then
-    failed
-fi
+    # should be eight lines in the output (banner + session + 6 keyrings)
+    marker "COUNT LINES"
+    nlines=`keyctl show | wc -l`
+    if [ "$nlines" -ne $(($nr_keyrings + 2)) ]
+    then
+	failed
+    fi
 
-# check the key ID list
-marker "CHECK KEY ID LIST"
-keyids=`keyctl show | tail -n +3 | cut -c1-11`
+    # check the key ID list
+    marker "CHECK KEY ID LIST"
+    keyids=`keyctl show | tail -n +3 | cut -c1-11`
 
-# we need to fix up the whitespace
-keyids=`echo $keyids`
-keyrings=`echo $keyrings`
+    # we need to fix up the whitespace
+    keyids=`echo $keyids`
+    keyrings=`echo $keyrings`
 
-echo "Compare '$keyids'" >>$OUTPUTFILE
-echo "And     '$keyrings'" >>$OUTPUTFILE
-if [ "$keyids" != "$keyrings" ]
-then
-    failed
+    echo "Compare '$keyids'" >>$OUTPUTFILE
+    echo "And     '$keyrings'" >>$OUTPUTFILE
+    if [ "$keyids" != "$keyrings" ]
+    then
+	failed
+    fi
 fi
 
 # check that shows of specified keyrings also work
