@@ -5,6 +5,10 @@
 . ../../prepare.inc.sh
 . ../../toolbox.inc.sh
 
+# We intentionally generate AVCs so the test system shouldn't fail us
+# because the AVCs were generated.
+export AVC_ERROR=+no_avc_check
+export RHTS_OPTION_STRONGER_AVC=
 
 # ---- do the actual testing ----
 
