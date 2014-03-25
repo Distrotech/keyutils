@@ -73,7 +73,7 @@ fi
 # Work out whether key invalidation is supported by the kernel
 #
 have_key_invalidate=0
-if keyutils_at_or_later_than 3.5-rc1 && kernel_at_or_later_than 3.5-rc1
+if keyutils_at_or_later_than 1.5.6 && kernel_at_or_later_than 3.5-rc1
 then
     have_key_invalidate=1
 fi
