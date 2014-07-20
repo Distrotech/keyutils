@@ -7,7 +7,15 @@
 # ---- do the actual testing ----
 
 result=PASS
-echo "++++ BEGINNING TEST" >$OUTPUTFILE
+if [ $skip_install_required -eq 1 ]
+then
+    echo "++++ SKIPPING TEST" >$OUTPUTFILE
+    marker "SKIP BECAUSE TEST REQUIRES FULL INSTALL (for /sbin/request-key)"
+    toolbox_report_result $TEST PASS
+    exit 0
+else
+    echo "++++ BEGINNING TEST" >$OUTPUTFILE
+fi
 
 marker "NO ARGS"
 expect_args_error keyctl request

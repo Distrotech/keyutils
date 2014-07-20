@@ -99,3 +99,12 @@ if [ "$SKIPROOTREQ" = "yes" ]
 then
     skip_root_required=1
 fi
+
+#
+# Check if skipping of tests requiring installation was requested
+#
+skip_install_required=0
+if [ "$SKIPINSTALLREQ" = "yes" ]
+then
+    skip_install_required=1
+fi
