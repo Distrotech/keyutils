@@ -11,9 +11,9 @@
 .SH NAME
 keyctl - Key management facility control
 .SH SYNOPSIS
-\fBkeyctl\fR --version
+\fBkeyctl\fR \-\-version
 .br
-\fBkeyctl\fR show [-x] [<keyring>]
+\fBkeyctl\fR show [\-x] [<keyring>]
 .br
 \fBkeyctl\fR add <type> <desc> <data> <keyring>
 .br
@@ -81,13 +81,13 @@ keyctl - Key management facility control
 .br
 \fBkeyctl\fR security <key>
 .br
-\fBkeyctl\fR reap [-v]
+\fBkeyctl\fR reap [\-v]
 .br
 \fBkeyctl\fR purge <type>
 .br
-\fBkeyctl\fR purge [-i] [-p] <type> <desc>
+\fBkeyctl\fR purge [\-i] [\-p] <type> <desc>
 .br
-\fBkeyctl\fR purge -s <type> <desc>
+\fBkeyctl\fR purge \-s <type> <desc>
 .br
 \fBkeyctl\fR get_persistent <keyring> [<uid>]
 .SH DESCRIPTION
@@ -156,19 +156,19 @@ be added in future that then cause ambiguity.
 .P
 (*) \fBDisplay the package version number\fR
 .P
-\fBkeyctl --version\fR
+\fBkeyctl \-\-version\fR
 .P
 This command prints the package version number and build date and exits:
 .P
 .RS
-testbox>keyctl --version
+testbox>keyctl \-\-version
 .br
 keyctl from keyutils-1.5.3 (Built 2011-08-24)
 .RE
 .P
 (*) \fBShow process keyrings\fR
 .P
-\fBkeyctl show [-x] [<keyring>]\fR
+\fBkeyctl show [\-x] [<keyring>]\fR
 .P
 By default this command recursively shows what keyrings a process is subscribed
 to and what keys and keyrings they contain.  If a keyring is specified then
@@ -195,7 +195,7 @@ The \fBpadd\fR variant of the command reads the data from stdin rather than
 taking it from the command line:
 .P
 .RS
-testbox>echo -n stuff | keyctl padd user mykey @u
+testbox>echo \-n stuff | keyctl padd user mykey @u
 .br
 26
 .RE
@@ -234,7 +234,7 @@ testbox>keyctl request2 user debug:hello wibble
 .br
 23
 .br
-testbox>echo -n wibble | keyctl prequest2 user debug:hello
+testbox>echo \-n wibble | keyctl prequest2 user debug:hello
 .br
 23
 .br
@@ -261,7 +261,7 @@ The \fBpupdate\fR variant of the command reads the data from stdin rather than
 taking it from the command line:
 .P
 .RS
-testbox>echo -n zebra | keyctl pupdate 23
+testbox>echo \-n zebra | keyctl pupdate 23
 .RE
 .P
 (*) \fBCreate a keyring\fR
@@ -409,7 +409,7 @@ testbox>keyctl list @us
 .br
 2 keys in keyring:
 .br
-       22: vrwsl----------  4043    -1 keyring: _uid.4043
+       22: vrwsl----------  4043    \-1 keyring: _uid.4043
 .br
        23: vrwsl----------  4043  4043 user: debug:hello
 .br
@@ -430,7 +430,7 @@ raw data returned from the kernel.
 .P
 .RS
 testbox>keyctl describe @us
-       -5: vrwsl----------  4043    -1 keyring: _uid_ses.4043
+       \-5: vrwsl----------  4043    \-1 keyring: _uid_ses.4043
 testbox>keyctl rdescribe @us
 keyring;4043;-1;3f1f0000;_uid_ses.4043
 .RE
@@ -618,7 +618,7 @@ The \fBpinstantiate\fR variant of the command reads the data from stdin rather
 than taking it from the command line:
 .P
 .RS
-testbox>echo -n "Debug $3" | keyctl pinstantiate $1 $4
+testbox>echo \-n "Debug $3" | keyctl pinstantiate $1 $4
 .RE
 .P
 (*) \fBSet the expiry time on a key\fR
@@ -662,7 +662,7 @@ testbox> keyctl show
 .br
 Session Keyring
 .br
-       -3 --alswrv      0     0  keyring: foo
+       \-3 \-\-alswrv      0     0  keyring: foo
 .br
 testbox> keyctl new_session
 .br
@@ -672,7 +672,7 @@ testbox> keyctl show
 .br
 Session Keyring
 .br
-       -3 --alswrv      0     0  keyring: _ses
+       \-3 \-\-alswrv      0     0  keyring: _ses
 .RE
 .P
 Note that this affects the \fIparent\fP of the process that invokes the system
@@ -702,9 +702,9 @@ together with the success or failure of the unlink.
 .P
 \fBkeyctl\fR purge <type>
 .br
-\fBkeyctl\fR purge [-i] [-p] <type> <desc>
+\fBkeyctl\fR purge [\-i] [\-p] <type> <desc>
 .br
-\fBkeyctl\fR purge -s <type> <desc>
+\fBkeyctl\fR purge \-s <type> <desc>
 .P
 These commands perform a depth-first search to find matching keys in the
 caller's session keyring tree and attempts to unlink them.  The number of
@@ -717,8 +717,8 @@ removed from keyrings that grant Write permission.
 The first variant purges all keys of the specified type.
 .P
 The second variant purges all keys of the specified type that also match the
-given description literally.  The -i flag allows a case-independent match and
-the -p flag allows a prefix match.
+given description literally.  The \-i flag allows a case-independent match and
+the \-p flag allows a prefix match.
 .P
 The third variant purges all keys of the specified type and matching
 description using the key type's comparator in the kernel to match the
