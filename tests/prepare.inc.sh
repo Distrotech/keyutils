@@ -90,3 +90,12 @@ elif kernel_at_or_later_than 3.13-rc1
 then
     have_big_key_type=1
 fi
+
+#
+# Check if skipping of tests requiring root was requested
+#
+skip_root_required=0
+if [ "$SKIPROOTREQ" = "yes" ]
+then
+    skip_root_required=1
+fi

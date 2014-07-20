@@ -40,8 +40,10 @@ expect_payload payload "lizard"
 marker "UNLINK KEY"
 unlink_key $keyid @s
 
-if [ $OSDIST = RHEL ] && ! version_less_than $OSRELEASE 6.6 ||
-   keyutils_at_or_later_than 1.5.6
+if [ $skip_root_required = 0 ] && {
+        [ $OSDIST = RHEL ] && ! version_less_than $OSRELEASE 6.6 ||
+        keyutils_at_or_later_than 1.5.6 ;
+        }
 then
     # add keys with huge payloads
     old_root_quota=`cat /proc/sys/kernel/keys/root_maxbytes`
