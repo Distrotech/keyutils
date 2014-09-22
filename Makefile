@@ -5,6 +5,7 @@ DESTDIR		:=
 SPECFILE	:= keyutils.spec
 NO_GLIBC_KEYERR	:= 0
 NO_ARLIB	:= 0
+NO_SOLIB	:= 0
 ETCDIR		:= /etc
 BINDIR		:= /bin
 SBINDIR		:= /sbin
@@ -95,7 +96,7 @@ endif
 # Normal build rule
 #
 ###############################################################################
-all: $(DEVELLIB) keyctl request-key key.dns_resolver
+all: keyctl request-key key.dns_resolver
 
 ###############################################################################
 #
@@ -104,20 +105,23 @@ all: $(DEVELLIB) keyctl request-key key.dns_resolver
 ###############################################################################
 #RPATH = -Wl,-rpath,$(LIBDIR)
 
-ifeq ($(NO_ARLIB),0)
-all: $(ARLIB)
-$(ARLIB): keyutils.o
-	$(AR) rcs $@ $<
-endif
-
 VCPPFLAGS	:= -DPKGBUILD="\"$(shell date -u +%F)\""
 VCPPFLAGS	+= -DPKGVERSION="\"keyutils-$(VERSION)\""
 VCPPFLAGS	+= -DAPIVERSION="\"libkeyutils-$(APIVERSION)\""
 
+ifeq ($(NO_ARLIB),0)
+all: $(ARLIB)
+$(ARLIB): keyutils.o
+	$(AR) rcs $@ $<
+
 keyutils.o: keyutils.c keyutils.h Makefile
 	$(CC) $(CPPFLAGS) $(VCPPFLAGS) $(CFLAGS) -UNO_GLIBC_KEYERR -o $@ -c $<
+LIB_DEPENDENCY	:= libkeyutils.a
+endif
 
 
+ifeq ($(NO_SOLIB),0)
+all: $(DEVELLIB)
 $(DEVELLIB): $(SONAME)
 	ln -sf $< $@
 
@@ -131,6 +135,8 @@ $(LIBNAME): keyutils.os version.lds Makefile
 
 keyutils.os: keyutils.c keyutils.h Makefile
 	$(CC) $(CPPFLAGS) $(VCPPFLAGS) $(CFLAGS) -fPIC -o $@ -c $<
+LIB_DEPENDENCY	:= $(DEVELLIB)
+endif
 
 ###############################################################################
 #
@@ -140,13 +146,13 @@ keyutils.os: keyutils.c keyutils.h Makefile
 %.o: %.c keyutils.h Makefile
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 
-keyctl: keyctl.o $(DEVELLIB)
+keyctl: keyctl.o $(LIB_DEPENDENCY)
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
-request-key: request-key.o $(DEVELLIB)
+request-key: request-key.o $(LIB_DEPENDENCY)
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils
 
-key.dns_resolver: key.dns_resolver.o $(DEVELLIB)
+key.dns_resolver: key.dns_resolver.o $(LIB_DEPENDENCY)
 	$(CC) -L. $(CFLAGS) $(LDFLAGS) $(RPATH) -o $@ $< -lkeyutils -lresolv
 
 ###############################################################################
@@ -158,10 +164,12 @@ install: all
 ifeq ($(NO_ARLIB),0)
 	$(INSTALL) -D -m 0644 $(ARLIB) $(DESTDIR)$(USRLIBDIR)/$(ARLIB)
 endif
+ifeq ($(NO_SOLIB),0)
 	$(INSTALL) -D $(LIBNAME) $(DESTDIR)$(LIBDIR)/$(LIBNAME)
 	$(LNS) $(LIBNAME) $(DESTDIR)$(LIBDIR)/$(SONAME)
 	mkdir -p $(DESTDIR)$(USRLIBDIR)
 	$(LNS) $(LIBDIR)/$(SONAME) $(DESTDIR)$(USRLIBDIR)/$(DEVELLIB)
+endif
 	$(INSTALL) -D keyctl $(DESTDIR)$(BINDIR)/keyctl
 	$(INSTALL) -D request-key $(DESTDIR)$(SBINDIR)/request-key
 	$(INSTALL) -D request-key-debug.sh $(DESTDIR)$(SHAREDIR)/request-key-debug.sh
