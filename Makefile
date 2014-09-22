@@ -17,7 +17,7 @@ MAN5		:= $(MANDIR)/man5
 MAN7		:= $(MANDIR)/man7
 MAN8		:= $(MANDIR)/man8
 INCLUDEDIR	:= /usr/include
-LNS		:= ln -sf
+LNS		:= $(LN) -sf
 
 ###############################################################################
 #
@@ -62,8 +62,6 @@ ifeq ($(origin USRLIBDIR),undefined)
 USRLIBDIR	:= $(patsubst /lib/%,/usr/lib/%,$(LIBDIR))
 endif
 BUILDFOR	:= $(shell file /usr/bin/make | sed -e 's!.*ELF \(32\|64\)-bit.*!\1!')-bit
-
-LNS		:= ln -sf
 
 ifeq ($(origin CFLAGS),undefined)
 ifeq ($(BUILDFOR),32-bit)
