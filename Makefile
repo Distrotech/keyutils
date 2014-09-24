@@ -17,6 +17,7 @@ MAN5		:= $(MANDIR)/man5
 MAN7		:= $(MANDIR)/man7
 MAN8		:= $(MANDIR)/man8
 INCLUDEDIR	:= /usr/include
+LN		:= ln
 LNS		:= $(LN) -sf
 
 ###############################################################################
@@ -121,10 +122,10 @@ endif
 ifeq ($(NO_SOLIB),0)
 all: $(DEVELLIB)
 $(DEVELLIB): $(SONAME)
-	ln -sf $< $@
+	$(LNS) $< $@
 
 $(SONAME): $(LIBNAME)
-	ln -sf $< $@
+	$(LNS) $< $@
 
 LIBVERS := -shared -Wl,-soname,$(SONAME) -Wl,--version-script,version.lds
 
