@@ -12,6 +12,7 @@
 #ifndef KEYUTILS_H
 #define KEYUTILS_H
 
+#include <sys/types.h>
 #include <stdint.h>
 
 extern const char keyutils_version_string[];
